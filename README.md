@@ -6,14 +6,14 @@
 
 ## Tabla de Contenidos
 
-- [Descripción General](#-descripción-general)
-- [Arquitectura del Proyecto](#-arquitectura-del-proyecto)
-- [Stack Tecnológico](#-stack-tecnológico)
+- [Descripción General](#descripción-general)
+- [Arquitectura del Proyecto](#arquitectura-del-proyecto)
+- [Stack Tecnológico](#-tack-tecnológico)
 - [Estructura de Carpetas](#-estructura-de-carpetas)
-- [Flujo de Ramas (Git Flow)](#-flujo-de-ramas-git-flow)
-- [Convención de Commits](#-convención-de-commits)
-- [Cómo Contribuir](#-cómo-contribuir)
-- [Configuración Inicial](#-configuración-inicial)
+- [Flujo de Ramas (Git Flow)](#flujo-de-ramas-git-flow)
+- [Convención de Commits](#convención-de-commits)
+- [Cómo Contribuir](#cómo-contribuir)
+- [Configuración Inicial](#configuración-inicial)
 
 ---
 
