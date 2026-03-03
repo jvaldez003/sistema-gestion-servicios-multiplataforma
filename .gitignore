@@ -1,0 +1,11 @@
+# Flutter related
+.dart_tool/
+.packages
+.pub-cache/
+build/
+
+# Firebase functions
+functions/node_modules/
+
+# IDE
+.vscode/
