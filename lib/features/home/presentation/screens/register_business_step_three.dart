@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/business_registration_provider.dart';
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 
 class RegisterBusinessStepThree extends ConsumerStatefulWidget {
   const RegisterBusinessStepThree({super.key});
@@ -193,11 +194,26 @@ class _RegisterBusinessStepThreeState
 
       await ref.read(businessRegistrationProvider.notifier).submit();
 
+      final currentState = ref.read(businessRegistrationProvider);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Negocio registrado con éxito!')),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (currentState.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(currentState.errorMessage!),
+                backgroundColor: AppColors.error),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('¡Negocio registrado con éxito!')),
+          );
+          // Navigate to Admin Dashboard and remove all previous routes
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+                builder: (context) => const AdminDashboardScreen()),
+            (route) => false,
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

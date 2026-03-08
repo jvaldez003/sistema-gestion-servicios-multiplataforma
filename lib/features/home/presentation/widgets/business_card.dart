@@ -136,145 +136,163 @@ class BusinessCard extends StatelessWidget {
               ),
             ),
 
-            // Main Image with Overlays
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.network(
-                    business.imageUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                // Gradient Overlay
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.6),
-                        ],
+            // Main Image with Overlays (only if gallery images exist)
+            if (business.galleryImages.isNotEmpty)
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.network(
+                      business.galleryImages.isNotEmpty
+                          ? business.galleryImages.first
+                          : business.imageUrl,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported_outlined,
+                              size: 40, color: AppColors.textSecondary),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Price and Rating
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  right: 12,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Desde',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: Colors.white,
-                              fontSize: 11,
-                            ),
-                          ),
-                          Text(
-                            '\$${business.startingPrice.toStringAsFixed(0)}',
-                            style: AppTypography.h3.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(10),
+                  // Gradient Overlay
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.6),
+                          ],
                         ),
-                        child: Row(
+                      ),
+                    ),
+                  ),
+                  // Price and Rating
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    right: 12,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 14),
-                            const SizedBox(width: 4),
                             Text(
-                              '${business.rating}',
+                              'Desde',
                               style: AppTypography.bodySmall.copyWith(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                            Text(
+                              '\$${business.startingPrice.toStringAsFixed(0)}',
+                              style: AppTypography.h3.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star,
+                                  color: Colors.amber, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${business.rating}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '(${business.totalReviews})',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Carousel Indicator
+                  if (business.galleryImages.length > 1)
+                    Positioned(
+                      bottom: 40,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                            business.galleryImages.length.clamp(0, 5),
+                            (index) => Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 2),
+                                  width: index == 0 ? 16 : 6,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: index == 0
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                )),
+                      ),
+                    ),
+                  // Image Counter Tag
+                  if (business.galleryImages.length > 1)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.image_outlined,
+                                color: Colors.white, size: 12),
                             const SizedBox(width: 4),
                             Text(
-                              '(${business.totalReviews})',
+                              '1/${business.galleryImages.length}',
                               style: AppTypography.bodySmall.copyWith(
-                                color: Colors.white70,
+                                color: Colors.white,
                                 fontSize: 10,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                // Carousel Indicator Placeholder
-                Positioned(
-                  bottom: 40,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                        3,
-                        (index) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              width: index == 0 ? 16 : 6,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: index == 0
-                                    ? Colors.white
-                                    : Colors.white.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            )),
-                  ),
-                ),
-                // Image Counter Tag
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.image_outlined,
-                            color: Colors.white, size: 12),
-                        const SizedBox(width: 4),
-                        Text(
-                          '1/3',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
             // Description and Tags
             Padding(

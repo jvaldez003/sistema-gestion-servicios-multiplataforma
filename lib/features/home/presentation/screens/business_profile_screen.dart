@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
+import '../providers/business_details_providers.dart';
 
-class BusinessProfileScreen extends StatefulWidget {
+class BusinessProfileScreen extends ConsumerStatefulWidget {
   final Business business;
 
   const BusinessProfileScreen({super.key, required this.business});
 
   @override
-  State<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
+  ConsumerState<BusinessProfileScreen> createState() =>
+      _BusinessProfileScreenState();
 }
 
-class _BusinessProfileScreenState extends State<BusinessProfileScreen>
+class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -31,6 +34,12 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final postsAsync = ref.watch(businessPostsProvider(widget.business.id));
+    final servicesAsync =
+        ref.watch(businessServicesProvider(widget.business.id));
+    final productsAsync =
+        ref.watch(businessProductsProvider(widget.business.id));
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -71,10 +80,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
               const SizedBox(width: 16),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.network(
-                widget.business.imageUrl,
-                fit: BoxFit.cover,
-              ),
+              background: _buildCoverImage(),
             ),
           ),
 
@@ -93,8 +99,20 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                         children: [
                           CircleAvatar(
                             radius: 40,
+                            backgroundColor: AppColors.primary,
                             backgroundImage:
-                                NetworkImage(widget.business.avatarUrl),
+                                widget.business.avatarUrl.isNotEmpty
+                                    ? NetworkImage(widget.business.avatarUrl)
+                                    : null,
+                            child: widget.business.avatarUrl.isEmpty
+                                ? Text(
+                                    widget.business.name
+                                        .substring(0, 1)
+                                        .toUpperCase(),
+                                    style: AppTypography.h1
+                                        .copyWith(color: Colors.white),
+                                  )
+                                : null,
                           ),
                           Positioned(
                             bottom: 2,
@@ -180,8 +198,14 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStat('48', 'Posts'),
-                        _buildStat('2.340', 'Seguidores'),
+                        postsAsync.when(
+                          data: (posts) =>
+                              _buildStat('${posts.length}', 'Posts'),
+                          loading: () => _buildStat('...', 'Posts'),
+                          error: (_, __) => _buildStat('0', 'Posts'),
+                        ),
+                        _buildStat(
+                            '${widget.business.followerCount}', 'Seguidores'),
                         _buildStat('${widget.business.rating}', 'Rating',
                             isStar: true),
                         _buildStat(
@@ -237,17 +261,185 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
             ),
           ),
 
-          // Tab Content (Posts as example)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildPostItem(),
-                childCount: 3,
-              ),
+          // Tab Content
+          SliverFillRemaining(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildPostsTab(postsAsync),
+                _buildServicesTab(servicesAsync),
+                _buildProductsTab(productsAsync),
+                _buildInfoTab(),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPostsTab(AsyncValue<List<Map<String, dynamic>>> postsAsync) {
+    return postsAsync.when(
+      data: (posts) {
+        if (posts.isEmpty) {
+          return const Center(child: Text('Aún no hay publicaciones.'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          itemCount: posts.length,
+          itemBuilder: (context, index) => _buildPostItem(posts[index]),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, __) => Center(child: Text('Error: $err')),
+    );
+  }
+
+  Widget _buildServicesTab(
+      AsyncValue<List<Map<String, dynamic>>> servicesAsync) {
+    return servicesAsync.when(
+      data: (services) {
+        if (services.isEmpty) {
+          return const Center(child: Text('Aún no hay servicios.'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          itemCount: services.length,
+          itemBuilder: (context, index) {
+            final service = services[index];
+            return ListTile(
+              title: Text(service['name'] ?? ''),
+              subtitle: Text(service['duration'] ?? ''),
+              trailing: Text(
+                '\$${service['price']}',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, __) => Center(child: Text('Error: $err')),
+    );
+  }
+
+  Widget _buildProductsTab(
+      AsyncValue<List<Map<String, dynamic>>> productsAsync) {
+    return productsAsync.when(
+      data: (products) {
+        if (products.isEmpty) {
+          return const Center(
+              child: Text('Aún no hay productos en la tienda.'));
+        }
+        return GridView.builder(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.8,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: products.length,
+          itemBuilder: (context, index) {
+            final product = products[index];
+            return Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.shopping_bag_outlined),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(product['name'] ?? '',
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          '\$${product['price']}',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, __) => Center(child: Text('Error: $err')),
+    );
+  }
+
+  Widget _buildInfoTab() {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Sobre nosotros',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Text(widget.business.description),
+          const SizedBox(height: 20),
+          const Text('Ubicación',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text('Bogotá, Colombia'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoverImage() {
+    final hasGallery = widget.business.galleryImages.isNotEmpty;
+    final hasImage = widget.business.imageUrl.isNotEmpty;
+
+    if (hasGallery) {
+      return Image.network(
+        widget.business.galleryImages.first,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+      );
+    } else if (hasImage) {
+      return Image.network(
+        widget.business.imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+      );
+    }
+    return _buildImagePlaceholder();
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: const Color(0xFFF1F5F9),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.storefront_outlined,
+                size: 48, color: AppColors.textSecondary),
+            const SizedBox(height: 8),
+            Text(widget.business.name,
+                style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
+          ],
+        ),
       ),
     );
   }
@@ -293,7 +485,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
     );
   }
 
-  Widget _buildPostItem() {
+  Widget _buildPostItem(Map<String, dynamic> post) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
@@ -308,20 +500,26 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.primary,
-                  child: Text('CM',
-                      style: TextStyle(color: Colors.white, fontSize: 10)),
+                  backgroundImage: widget.business.avatarUrl.isNotEmpty
+                      ? NetworkImage(widget.business.avatarUrl)
+                      : null,
+                  child: widget.business.avatarUrl.isEmpty
+                      ? Text(widget.business.name.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10))
+                      : null,
                 ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Carlos Méndez',
+                    Text(widget.business.name,
                         style: AppTypography.bodySmall
                             .copyWith(fontWeight: FontWeight.bold)),
-                    Text('hace 2h  •  Corte de cabello',
+                    Text(post['title'] ?? 'Novedad',
                         style: AppTypography.bodySmall.copyWith(fontSize: 10)),
                   ],
                 ),
@@ -331,16 +529,22 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen>
               ],
             ),
           ),
-          ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(20)),
-            child: Image.network(
-              'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&q=80&w=800',
-              height: 250,
-              width: double.infinity,
-              fit: BoxFit.cover,
+          if (post['imageUrl'] != null)
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(20)),
+              child: Image.network(
+                post['imageUrl'],
+                height: 250,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 250,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image_not_supported),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );

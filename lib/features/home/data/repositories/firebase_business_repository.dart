@@ -26,6 +26,8 @@ class FirebaseBusinessRepository implements BusinessRepository {
       'likes': business.likes,
       'comments': business.comments,
       'professionalCount': business.professionalCount,
+      'followerCount': business.followerCount,
+      'galleryImages': business.galleryImages,
       'ownerId':
           business.id, // Using business.id as surrogate for ownerId for now
       'createdAt': FieldValue.serverTimestamp(),
@@ -42,9 +44,28 @@ class FirebaseBusinessRepository implements BusinessRepository {
 
     if (snapshot.docs.isEmpty) return null;
 
-    // In a real app, you'd have a fromMap method in the Business model
-    // For now, returning a mock or constructing it manually
-    return null;
+    final doc = snapshot.docs.first;
+    final data = doc.data();
+    return Business(
+      id: doc.id,
+      name: data['name'] ?? '',
+      category: data['category'] ?? '',
+      description: data['description'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      avatarUrl: data['avatarUrl'] ?? '',
+      rating: (data['rating'] ?? 0.0).toDouble(),
+      totalReviews: data['totalReviews'] ?? 0,
+      distance: (data['distance'] ?? 0.0).toDouble(),
+      isVerified: data['isVerified'] ?? false,
+      isTop: data['isTop'] ?? false,
+      startingPrice: (data['startingPrice'] ?? 0.0).toDouble(),
+      tags: List<String>.from(data['tags'] ?? []),
+      likes: data['likes'] ?? 0,
+      comments: data['comments'] ?? 0,
+      professionalCount: data['professionalCount'] ?? 0,
+      followerCount: data['followerCount'] ?? 0,
+      galleryImages: List<String>.from(data['galleryImages'] ?? []),
+    );
   }
 
   @override
@@ -57,10 +78,8 @@ class FirebaseBusinessRepository implements BusinessRepository {
           name: data['name'] ?? '',
           category: data['category'] ?? '',
           description: data['description'] ?? '',
-          imageUrl: data['imageUrl'] ??
-              'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=800',
-          avatarUrl: data['avatarUrl'] ??
-              'https://ui-avatars.com/api/?name=${data['name']}',
+          imageUrl: data['imageUrl'] ?? '',
+          avatarUrl: data['avatarUrl'] ?? '',
           rating: (data['rating'] ?? 0.0).toDouble(),
           totalReviews: data['totalReviews'] ?? 0,
           distance: (data['distance'] ?? 0.0).toDouble(),
@@ -71,6 +90,8 @@ class FirebaseBusinessRepository implements BusinessRepository {
           likes: data['likes'] ?? 0,
           comments: data['comments'] ?? 0,
           professionalCount: data['professionalCount'] ?? 0,
+          followerCount: data['followerCount'] ?? 0,
+          galleryImages: List<String>.from(data['galleryImages'] ?? []),
         );
       }).toList();
     });
@@ -102,6 +123,44 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .collection('businesses')
         .doc(businessId)
         .collection('posts')
-        .add(post);
+        .add({
+      ...post,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> getServicesStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('services')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getProductsStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('products')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getPostsStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Future<void> updateGalleryImages(
+      String businessId, List<String> imageUrls) async {
+    await _firestore.collection('businesses').doc(businessId).update({
+      'galleryImages': imageUrls,
+    });
   }
 }

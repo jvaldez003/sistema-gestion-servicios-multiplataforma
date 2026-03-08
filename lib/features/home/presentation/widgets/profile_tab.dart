@@ -4,6 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../admin/presentation/providers/admin_providers.dart';
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -12,6 +14,7 @@ class ProfileTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
+    final businessAsync = ref.watch(adminBusinessProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -45,9 +48,11 @@ class ProfileTab extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
 
           // Favoritos Section Header
-          _buildSectionHeader(
-              context, 'Favoritos', '3 negocios', Icons.favorite,
-              color: AppColors.error),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(
+                context, 'Favoritos', '3 negocios', Icons.favorite,
+                color: AppColors.error),
+          ),
 
           // Favorites Horizontal List
           SliverToBoxAdapter(
@@ -57,8 +62,10 @@ class ProfileTab extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
 
           // Cuenta Section
-          _buildSectionHeader(context, 'CUENTA', '', Icons.person,
-              isCategory: true),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, 'CUENTA', '', Icons.person,
+                isCategory: true),
+          ),
           SliverToBoxAdapter(
             child: _buildMenuContainer(context, [
               _buildMenuItem(
@@ -91,9 +98,45 @@ class ProfileTab extends ConsumerWidget {
 
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
 
+          // Business Section (Conditional)
+          businessAsync.when(
+            data: (business) {
+              if (business == null)
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              return SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    _buildSectionHeader(context, 'NEGOCIO', '', Icons.business,
+                        isCategory: true),
+                    _buildMenuContainer(context, [
+                      _buildMenuItem(
+                        context,
+                        icon: Icons.dashboard_outlined,
+                        title: 'Panel de Administrador',
+                        subtitle: 'Gestionar ${business.name}',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminDashboardScreen(),
+                          ),
+                        ),
+                        isLast: true,
+                      ),
+                    ]),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, __) =>
+                const SliverToBoxAdapter(child: SizedBox.shrink()),
+          ),
+
           // Actividad Section
-          _buildSectionHeader(context, 'ACTIVIDAD', '', Icons.work,
-              isCategory: true),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(context, 'ACTIVIDAD', '', Icons.work,
+                isCategory: true),
+          ),
           SliverToBoxAdapter(
             child: _buildMenuContainer(context, [
               _buildMenuItem(
@@ -284,7 +327,9 @@ class ProfileTab extends ConsumerWidget {
                 ),
                 child: Center(
                   child: Text(
-                    user?.name?.substring(0, 1).toUpperCase() ?? 'M',
+                    (user?.name != null && user!.name!.isNotEmpty)
+                        ? user.name![0].toUpperCase()
+                        : 'M',
                     style: AppTypography.h1.copyWith(
                       color: Colors.white,
                       fontSize: 32,
@@ -402,39 +447,37 @@ class ProfileTab extends ConsumerWidget {
   Widget _buildSectionHeader(
       BuildContext context, String title, String subtitle, IconData icon,
       {Color? color, bool isCategory = false}) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.md),
-        child: Row(
-          children: [
-            if (isCategory)
-              Icon(icon, color: AppColors.textSecondary, size: 18)
-            else
-              Icon(icon, color: color ?? AppColors.primary, size: 22),
-            const SizedBox(width: 8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.md),
+      child: Row(
+        children: [
+          if (isCategory)
+            Icon(icon, color: AppColors.textSecondary, size: 18)
+          else
+            Icon(icon, color: color ?? AppColors.primary, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: isCategory
+                ? AppTypography.bodySmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: AppColors.textSecondary,
+                  )
+                : AppTypography.titleLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+          ),
+          const Spacer(),
+          if (subtitle.isNotEmpty)
             Text(
-              title,
-              style: isCategory
-                  ? AppTypography.bodySmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      color: AppColors.textSecondary,
-                    )
-                  : AppTypography.titleLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-            ),
-            const Spacer(),
-            if (subtitle.isNotEmpty)
-              Text(
-                subtitle,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+              subtitle,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondary,
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -477,6 +520,7 @@ class ProfileTab extends ConsumerWidget {
       {required IconData icon,
       required String title,
       required String subtitle,
+      VoidCallback? onTap,
       bool isLast = false}) {
     return Column(
       children: [
@@ -501,7 +545,7 @@ class ProfileTab extends ConsumerWidget {
           ),
           trailing: const Icon(Icons.chevron_right_rounded,
               color: AppColors.textSecondary),
-          onTap: () {},
+          onTap: onTap,
         ),
         if (!isLast)
           const Divider(height: 1, indent: 70, color: Color(0xFFF1F5F9)),

@@ -16,6 +16,8 @@ class Business {
   final int likes;
   final int comments;
   final int professionalCount;
+  final int followerCount;
+  final List<String> galleryImages;
 
   Business({
     required this.id,
@@ -35,5 +37,7 @@ class Business {
     this.likes = 0,
     this.comments = 0,
     this.professionalCount = 1,
+    this.followerCount = 0,
+    this.galleryImages = const [],
   });
 }

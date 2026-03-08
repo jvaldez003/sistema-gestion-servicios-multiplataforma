@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/business.dart';
 import '../../domain/repositories/business_repository.dart';
 import './business_providers.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 class BusinessRegistrationState {
   final int currentStep;
@@ -70,7 +70,11 @@ class BusinessRegistrationState {
 
 class BusinessRegistrationNotifier
     extends StateNotifier<BusinessRegistrationState> {
-  BusinessRegistrationNotifier() : super(BusinessRegistrationState());
+  final BusinessRepository _repository;
+  final String? _currentUserId;
+
+  BusinessRegistrationNotifier(this._repository, this._currentUserId)
+      : super(BusinessRegistrationState());
 
   void updateStep(int step) => state = state.copyWith(currentStep: step);
 
@@ -110,10 +114,33 @@ class BusinessRegistrationNotifier
   }
 
   Future<void> submit() async {
+    if (_currentUserId == null) {
+      state = state.copyWith(errorMessage: 'Usuario no autenticado');
+      return;
+    }
+
     state = state.copyWith(isLoading: true);
     try {
-      // Logic to save to Firebase would go here
-      await Future.delayed(const Duration(seconds: 2));
+      final business = Business(
+        id: _currentUserId!, // Using user ID as the business ID for a 1:1 relationship
+        name: state.name,
+        category: state.category,
+        description: state.description,
+        imageUrl: '', // No default image - admin uploads via gallery
+        avatarUrl: '',
+        rating: 0.0,
+        totalReviews: 0,
+        distance: 0.0,
+        isVerified: false,
+        isTop: false,
+        startingPrice: 0.0,
+        tags: [state.category],
+        likes: 0,
+        comments: 0,
+        professionalCount: 1,
+      );
+
+      await _repository.createBusiness(business);
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -125,5 +152,7 @@ class BusinessRegistrationNotifier
 
 final businessRegistrationProvider = StateNotifierProvider<
     BusinessRegistrationNotifier, BusinessRegistrationState>((ref) {
-  return BusinessRegistrationNotifier();
+  final repository = ref.watch(businessRepositoryProvider);
+  final authState = ref.watch(authNotifierProvider);
+  return BusinessRegistrationNotifier(repository, authState.user?.id);
 });
