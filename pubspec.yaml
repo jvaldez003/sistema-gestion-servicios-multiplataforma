@@ -2,12 +2,23 @@ name: sistema_gestion_servicios_multiplataforma
 version: 0.1.0
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
+  cloud_firestore: ^6.1.3
+  firebase_auth: ^6.2.0
+  firebase_core: ^4.5.0
   flutter:
     sdk: flutter
+  flutter_riverpod: ^2.5.1
+  flutter_svg: ^2.2.4
+  font_awesome_flutter: ^10.12.0
+  google_fonts: ^8.0.2
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+flutter:
+  uses-material-design: true
