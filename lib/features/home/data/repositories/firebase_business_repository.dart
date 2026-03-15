@@ -69,6 +69,38 @@ class FirebaseBusinessRepository implements BusinessRepository {
   }
 
   @override
+  Stream<Business?> getBusinessStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return null;
+      final data = doc.data()!;
+      return Business(
+        id: doc.id,
+        name: data['name'] ?? '',
+        category: data['category'] ?? '',
+        description: data['description'] ?? '',
+        imageUrl: data['imageUrl'] ?? '',
+        avatarUrl: data['avatarUrl'] ?? '',
+        rating: (data['rating'] ?? 0.0).toDouble(),
+        totalReviews: data['totalReviews'] ?? 0,
+        distance: (data['distance'] ?? 0.0).toDouble(),
+        isVerified: data['isVerified'] ?? false,
+        isTop: data['isTop'] ?? false,
+        startingPrice: (data['startingPrice'] ?? 0.0).toDouble(),
+        tags: List<String>.from(data['tags'] ?? []),
+        likes: data['likes'] ?? 0,
+        comments: data['comments'] ?? 0,
+        professionalCount: data['professionalCount'] ?? 0,
+        followerCount: data['followerCount'] ?? 0,
+        galleryImages: List<String>.from(data['galleryImages'] ?? []),
+      );
+    });
+  }
+
+  @override
   Stream<List<Business>> getBusinessesStream() {
     return _firestore.collection('businesses').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -135,7 +167,11 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .doc(businessId)
         .collection('services')
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
   }
 
   Stream<List<Map<String, dynamic>>> getProductsStream(String businessId) {
@@ -144,7 +180,11 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .doc(businessId)
         .collection('products')
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
   }
 
   Stream<List<Map<String, dynamic>>> getPostsStream(String businessId) {
@@ -154,13 +194,97 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .collection('posts')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
   }
 
   Future<void> updateGalleryImages(
       String businessId, List<String> imageUrls) async {
     await _firestore.collection('businesses').doc(businessId).update({
       'galleryImages': imageUrls,
+    });
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> getTeamStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('team')
+        .where('status', isEqualTo: 'active')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
+  }
+
+  @override
+  Future<void> deleteService(String businessId, String serviceId) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('services')
+        .doc(serviceId)
+        .delete();
+  }
+
+  @override
+  Future<void> deleteProduct(String businessId, String productId) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('products')
+        .doc(productId)
+        .delete();
+  }
+
+  @override
+  Future<void> deletePost(String businessId, String postId) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .doc(postId)
+        .delete();
+  }
+
+  @override
+  Stream<bool> isFollowingBusiness(String businessId, String userId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('followers')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => snapshot.exists);
+  }
+
+  @override
+  Future<void> toggleFollowBusiness(String businessId, String userId) async {
+    final businessRef = _firestore.collection('businesses').doc(businessId);
+    final followerRef = businessRef.collection('followers').doc(userId);
+
+    return _firestore.runTransaction((transaction) async {
+      final followerSnapshot = await transaction.get(followerRef);
+      
+      if (followerSnapshot.exists) {
+        transaction.delete(followerRef);
+        transaction.update(businessRef, {
+          'followerCount': FieldValue.increment(-1),
+        });
+      } else {
+        transaction.set(followerRef, {
+          'followedAt': FieldValue.serverTimestamp(),
+        });
+        transaction.update(businessRef, {
+          'followerCount': FieldValue.increment(1),
+        });
+      }
     });
   }
 }

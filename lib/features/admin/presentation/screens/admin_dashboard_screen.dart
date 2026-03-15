@@ -12,6 +12,9 @@ import 'package:sistema_gestion_servicios_multiplataforma/features/admin/present
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'manage_products_screen.dart';
+import 'manage_gallery_screen.dart';
+import 'manage_services_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -457,11 +460,37 @@ class AdminDashboardScreen extends ConsumerWidget {
             child: Row(
               children: [
                 _buildSmallActionButton(
-                    Icons.inventory_2_outlined, 'Ver productos'),
+                  Icons.inventory_2_outlined,
+                  'Ver productos',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            ManageProductsScreen(businessId: business.id)),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                _buildSmallActionButton(Icons.image_outlined, 'Ver galería'),
+                _buildSmallActionButton(
+                  Icons.image_outlined,
+                  'Ver galería',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            ManageGalleryScreen(businessId: business.id)),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                _buildSmallActionButton(Icons.cut_outlined, 'Servicios'),
+                _buildSmallActionButton(
+                  Icons.cut_outlined,
+                  'Servicios',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            ManageServicesScreen(businessId: business.id)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1066,29 +1095,33 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSmallActionButton(IconData icon, String text) {
+  Widget _buildSmallActionButton(
+      IconData icon, String text, VoidCallback onTap) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 14, color: const Color(0xFFC084FC)),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(text,
-                  style:
-                      const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const Icon(Icons.chevron_right,
-                size: 12, color: AppColors.textSecondary),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: const Color(0xFFC084FC)),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(text,
+                    style:
+                        const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis),
+              ),
+              const Icon(Icons.chevron_right,
+                  size: 12, color: AppColors.textSecondary),
+            ],
+          ),
         ),
       ),
     );

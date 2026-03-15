@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,15 +68,23 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
     try {
       final repo = ref.read(businessRepositoryProvider);
 
-      // Simulating image upload and getting a URL
-      // In a real app, you'd upload _selectedImages to Firebase Storage here
-      const mockUrl =
-          'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800';
+      String finalImageUrl = '';
+
+      if (_selectedImages.isNotEmpty) {
+        if (kIsWeb) {
+          final bytes = await _selectedImages.first.readAsBytes();
+          final base64String = base64Encode(bytes);
+          finalImageUrl = 'data:image/jpeg;base64,$base64String';
+        } else {
+          // Si no es web, subiremos a storage luego. Por ahora usamos mock
+          finalImageUrl = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800';
+        }
+      }
 
       await repo.addPost(widget.businessId, {
-        'title': 'Nueva publicación',
+        'title': _description.split('\n').first.substring(0, _description.length > 20 ? 20 : _description.length), 
         'content': _description,
-        'imageUrl': mockUrl,
+        'imageUrl': finalImageUrl.isNotEmpty ? finalImageUrl : null,
         'serviceId': _selectedServiceId,
         'createdAt': DateTime.now().toIso8601String(),
       });
@@ -159,12 +169,19 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    File(_selectedImages[index].path),
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: kIsWeb
+                      ? Image.network(
+                          _selectedImages[index].path,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.file(
+                          File(_selectedImages[index].path),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
                 ),
                 Positioned(
                   top: 4,
@@ -294,12 +311,19 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
         if (_selectedImages.isNotEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.file(
-              File(_selectedImages[0].path),
-              width: double.infinity,
-              height: 200,
-              fit: BoxFit.cover,
-            ),
+            child: kIsWeb
+                ? Image.network(
+                    _selectedImages[0].path,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  )
+                : Image.file(
+                    File(_selectedImages[0].path),
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
           ),
         if (_isPublishing)
           const Padding(

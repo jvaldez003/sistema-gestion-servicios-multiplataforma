@@ -5,6 +5,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
 import '../providers/business_details_providers.dart';
+import '../providers/business_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 class BusinessProfileScreen extends ConsumerStatefulWidget {
   final Business business;
@@ -34,11 +36,14 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final postsAsync = ref.watch(businessPostsProvider(widget.business.id));
-    final servicesAsync =
-        ref.watch(businessServicesProvider(widget.business.id));
-    final productsAsync =
-        ref.watch(businessProductsProvider(widget.business.id));
+    final businessId = widget.business.id;
+    final postsAsync = ref.watch(businessPostsProvider(businessId));
+    final servicesAsync = ref.watch(businessServicesProvider(businessId));
+    final productsAsync = ref.watch(businessProductsProvider(businessId));
+    final teamAsync = ref.watch(businessTeamProvider(businessId));
+    final isFollowingAsync = ref.watch(isFollowingBusinessProvider(businessId));
+    final businessDetailsAsync = ref.watch(businessStreamProvider(businessId));
+    final authState = ref.watch(authStateProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -130,18 +135,54 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                           ),
                         ],
                       ),
-                      Row(
+                       Row(
                         children: [
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
+                          isFollowingAsync.when(
+                            data: (isFollowing) => ElevatedButton(
+                              onPressed: () async {
+                                final user = authState.value;
+                                if (user == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Debes iniciar sesión para seguir negocios')),
+                                  );
+                                  return;
+                                }
+                                try {
+                                  await ref
+                                      .read(businessRepositoryProvider)
+                                      .toggleFollowBusiness(
+                                          businessId, user.id);
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Error al actualizar seguimiento: $e')),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isFollowing
+                                    ? Colors.white
+                                    : AppColors.primary,
+                                foregroundColor: isFollowing
+                                    ? AppColors.primary
+                                    : Colors.white,
+                                side: isFollowing
+                                    ? const BorderSide(
+                                        color: AppColors.primary)
+                                    : null,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                              ),
+                              child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
                             ),
-                            child: const Text('Seguir'),
+                            loading: () => const ElevatedButton(
+                                onPressed: null, child: Text('...')),
+                            error: (_, __) => const ElevatedButton(
+                                onPressed: null, child: Text('Error')),
                           ),
                           const SizedBox(width: 10),
                           ElevatedButton(
@@ -204,8 +245,12 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                           loading: () => _buildStat('...', 'Posts'),
                           error: (_, __) => _buildStat('0', 'Posts'),
                         ),
-                        _buildStat(
-                            '${widget.business.followerCount}', 'Seguidores'),
+                        businessDetailsAsync.when(
+                          data: (business) => _buildStat(
+                              '${business?.followerCount ?? 0}', 'Seguidores'),
+                          loading: () => _buildStat('...', 'Seguidores'),
+                          error: (_, __) => _buildStat('0', 'Seguidores'),
+                        ),
                         _buildStat('${widget.business.rating}', 'Rating',
                             isStar: true),
                         _buildStat(
@@ -269,7 +314,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                 _buildPostsTab(postsAsync),
                 _buildServicesTab(servicesAsync),
                 _buildProductsTab(productsAsync),
-                _buildInfoTab(),
+                _buildInfoTab(teamAsync),
               ],
             ),
           ),
@@ -384,8 +429,8 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
     );
   }
 
-  Widget _buildInfoTab() {
-    return Padding(
+  Widget _buildInfoTab(AsyncValue<List<Map<String, dynamic>>> teamAsync) {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,10 +439,51 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Text(widget.business.description),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           const Text('Ubicación',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
           const Text('Bogotá, Colombia'),
+          const SizedBox(height: 32),
+          const Text('Nuestro Equipo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          teamAsync.when(
+            data: (team) {
+              if (team.isEmpty) {
+                return const Text('Aún no hay miembros en el equipo.');
+              }
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: team.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final member = team[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: Text(
+                        (member['name'] ?? 'U').substring(0, 1).toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      member['name'] ?? 'Desconocido',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(member['role'] ?? 'Sin cargo asignado'),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, __) => Text('Error al cargar equipo: $err'),
+          ),
         ],
       ),
     );

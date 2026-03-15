@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,16 +85,25 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
     try {
       final repo = ref.read(businessRepositoryProvider);
 
-      // Simulating image upload
-      const mockUrl =
-          'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&q=80&w=800';
+      String finalImageUrl = '';
+
+      if (_selectedImage != null) {
+        if (kIsWeb) {
+          final bytes = await _selectedImage!.readAsBytes();
+          final base64String = base64Encode(bytes);
+          finalImageUrl = 'data:image/jpeg;base64,$base64String';
+        } else {
+          // Si no es web, subiremos a storage luego
+          finalImageUrl = 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&q=80&w=800';
+        }
+      }
 
       await repo.addProduct(widget.businessId, {
         'name': _nameController.text,
         'price': double.tryParse(_priceController.text) ?? 0.0,
         'stock': int.tryParse(_stockController.text) ?? 0,
         'description': _descController.text,
-        'imageUrl': mockUrl,
+        'imageUrl': finalImageUrl.isNotEmpty ? finalImageUrl : null,
         'createdAt': DateTime.now().toIso8601String(),
       });
 
@@ -157,8 +168,9 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
             child: _selectedImage != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: Image.file(File(_selectedImage!.path),
-                        fit: BoxFit.cover),
+                    child: kIsWeb
+                        ? Image.network(_selectedImage!.path, fit: BoxFit.cover)
+                        : Image.file(File(_selectedImage!.path), fit: BoxFit.cover),
                   )
                 : const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -266,8 +278,11 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
         if (_selectedImage != null)
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.file(File(_selectedImage!.path),
-                width: double.infinity, height: 150, fit: BoxFit.cover),
+            child: kIsWeb
+                ? Image.network(_selectedImage!.path,
+                    width: double.infinity, height: 150, fit: BoxFit.cover)
+                : Image.file(File(_selectedImage!.path),
+                    width: double.infinity, height: 150, fit: BoxFit.cover),
           ),
         if (_isPublishing)
           const Padding(
