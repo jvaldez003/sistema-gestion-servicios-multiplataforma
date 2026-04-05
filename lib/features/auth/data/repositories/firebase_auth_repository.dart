@@ -1,14 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId:
-        '178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com',
-  );
+  late final GoogleSignIn _googleSignIn;
+
+  FirebaseAuthRepository() {
+    String? clientId;
+    if (kIsWeb) {
+      clientId = '178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com';
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      clientId = '178817144351-h3l7mlji4bepcuseps6vb0p0s8if4917.apps.googleusercontent.com';
+    }
+    // For Android, clientId is null, it uses google-services.json
+    _googleSignIn = GoogleSignIn(clientId: clientId);
+  }
 
   AppUser? _userFromFirebase(User? user) {
     if (user == null) return null;

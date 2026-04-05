@@ -36,7 +36,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
-      // No SnackBar here anymore, displaying in UI
+
+      final authState = ref.read(authNotifierProvider);
+      if (authState.status == AuthStatus.error && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.errorMessage ?? 'Error al iniciar sesión'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 

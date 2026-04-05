@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../widgets/business_card.dart';
+import '../widgets/appointments_tab.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/promotional_banner.dart';
 import '../providers/business_providers.dart';
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _selectedIndex,
         children: [
           const ExplorarTab(),
-          const PlaceholderWidget(title: 'Mis Citas'),
+          const AppointmentsTab(),
           const PlaceholderWidget(title: 'Puntos'),
           const ProfileTab(),
         ],

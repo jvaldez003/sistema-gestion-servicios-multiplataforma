@@ -32,7 +32,16 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
-  AuthNotifier(this._repository) : super(AuthState());
+  AuthNotifier(this._repository) : super(AuthState()) {
+    // Listen to auth state changes for persistence
+    _repository.authStateChanges.listen((user) {
+      if (user != null) {
+        state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      } else {
+        state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      }
+    });
+  }
 
   Future<void> signIn(String email, String password) async {
     state = state.copyWith(status: AuthStatus.loading);
