@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/widgets/add_member_flow.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_details_providers.dart';
 
 class TeamManagementScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -46,6 +47,13 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
               members.where((m) => m['status'] == 'active').length;
           final pendingCount =
               members.where((m) => m['status'] == 'pending').length;
+
+          // Get work requests from the provider
+          final workRequestsAsync = ref.watch(businessWorkRequestsProvider(widget.businessId));
+          final workRequestsCount = workRequestsAsync.maybeWhen(
+            data: (requests) => requests.length,
+            orElse: () => 0,
+          );
 
           return CustomScrollView(
             slivers: [
@@ -92,8 +100,8 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                               '$activeCount', 'Activos hoy', Colors.white),
                           const SizedBox(width: 12),
                           _buildHeaderStat(
-                              '$pendingCount', 'Solicitudes', Colors.white,
-                              badge: pendingCount > 0),
+                              '$workRequestsCount', 'Solicitudes', Colors.white,
+                              badge: workRequestsCount > 0),
                         ],
                       ),
                     ],
@@ -155,7 +163,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                                     color: Color(0xFFEF4444),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Text('$pendingCount',
+                                  child: Text('$workRequestsCount',
                                       style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 8,
@@ -288,24 +296,60 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
 
               // Solicitudes Tab
               if (_tabController.index == 1)
-                SliverToBoxAdapter(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(48),
-                      child: Column(
-                        children: [
-                          Icon(Icons.mail_outline,
-                              size: 48, color: AppColors.textSecondary),
-                          const SizedBox(height: 12),
-                          Text('No hay solicitudes pendientes',
-                              style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 14)),
-                        ],
+                workRequestsAsync.when(
+                  data: (requests) {
+                    if (requests.isEmpty) {
+                      return SliverToBoxAdapter(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(48),
+                            child: Column(
+                              children: [
+                                Icon(Icons.mail_outline,
+                                    size: 48, color: AppColors.textSecondary),
+                                const SizedBox(height: 12),
+                                Text('No hay solicitudes pendientes',
+                                    style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 14)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final request = requests[index];
+                            return _buildWorkRequestCard(request, ref);
+                          },
+                          childCount: requests.length,
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(48),
+                        child: const CircularProgressIndicator(),
                       ),
                     ),
                   ),
-                ),
+                  error: (err, __) => SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(48),
+                        child: Text('Error: $err'),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const SliverToBoxAdapter(),
 
               const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
             ],
@@ -527,4 +571,134 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
       ),
     );
   }
+
+  Widget _buildWorkRequestCard(
+      Map<String, dynamic> request, WidgetRef ref) {
+    final requesterName = request['requesterName'] ?? 'Usuario desconocido';
+    final requesterAvatar = request['requesterAvatar'] ?? '';
+    final requestId = request['id'] ?? '';
+
+    final initials = requesterName.isNotEmpty
+        ? requesterName
+            .split(' ')
+            .take(2)
+            .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+            .join()
+        : '??';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        children: [
+          // Header with avatar and name
+          Row(
+            children: [
+              if (requesterAvatar.isNotEmpty)
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: NetworkImage(requesterAvatar),
+                )
+              else
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.primary,
+                  child: Text(initials,
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(requesterName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text('Solicitud de trabajo',
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    try {
+                      await ref
+                          .read(rejectWorkRequestProvider(
+                              (widget.businessId, requestId))
+                              .future);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Solicitud rechazada')),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Error: $e')),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Color(0xFFFFCDD2)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Rechazar',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await ref
+                          .read(acceptWorkRequestProvider(
+                              (widget.businessId, requestId))
+                              .future);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('¡Solicitud aceptada! El usuario se ha agregado al equipo.')),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Error: $e')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Aceptar',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
+

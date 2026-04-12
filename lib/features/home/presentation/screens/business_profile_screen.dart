@@ -196,6 +196,49 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                             ),
                             child: const Text('Reservar'),
                           ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final user = authState.value;
+                              if (user == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Debes iniciar sesión para solicitar trabajo')),
+                                );
+                                return;
+                              }
+                              try {
+                                await ref
+                                    .read(businessRepositoryProvider)
+                                    .sendWorkRequest(
+                                      businessId,
+                                      user.id,
+                                      user.name ?? 'Usuario',
+                                      user.photoUrl ?? '',
+                                    );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          '¡Solicitud enviada correctamente!')),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Error al enviar solicitud: $e')),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[600],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: const Text('Solicitar Trabajo'),
+                          ),
                         ],
                       ),
                     ],

@@ -42,3 +42,33 @@ final isFollowingBusinessProvider = StreamProvider.family<bool, String>((ref, bu
   final repository = ref.watch(businessRepositoryProvider);
   return repository.isFollowingBusiness(businessId, user.id);
 });
+
+final businessWorkRequestsProvider =
+    StreamProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, businessId) {
+  final repository = ref.watch(businessRepositoryProvider);
+  return repository.getWorkRequestsStream(businessId);
+});
+
+final sendWorkRequestProvider =
+    FutureProvider.family<void, (String, String, String, String)>(
+        (ref, params) async {
+  final repository = ref.watch(businessRepositoryProvider);
+  final (businessId, requesterId, requesterName, requesterAvatar) = params;
+  await repository.sendWorkRequest(
+      businessId, requesterId, requesterName, requesterAvatar);
+});
+
+final acceptWorkRequestProvider =
+    FutureProvider.family<void, (String, String)>((ref, params) async {
+  final repository = ref.watch(businessRepositoryProvider);
+  final (businessId, requestId) = params;
+  await repository.acceptWorkRequest(businessId, requestId);
+});
+
+final rejectWorkRequestProvider =
+    FutureProvider.family<void, (String, String)>((ref, params) async {
+  final repository = ref.watch(businessRepositoryProvider);
+  final (businessId, requestId) = params;
+  await repository.rejectWorkRequest(businessId, requestId);
+});

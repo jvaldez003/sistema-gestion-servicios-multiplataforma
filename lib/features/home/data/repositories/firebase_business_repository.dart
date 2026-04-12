@@ -287,4 +287,94 @@ class FirebaseBusinessRepository implements BusinessRepository {
       }
     });
   }
+
+  @override
+  Future<void> sendWorkRequest(String businessId, String requesterId,
+      String requesterName, String requesterAvatar) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .add({
+      'businessId': businessId,
+      'requesterId': requesterId,
+      'requesterName': requesterName,
+      'requesterAvatar': requesterAvatar,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> getWorkRequestsStream(String businessId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
+  }
+
+  @override
+  Future<void> acceptWorkRequest(String businessId, String requestId) async {
+    final requestDoc = await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .doc(requestId)
+        .get();
+
+    if (!requestDoc.exists) return;
+
+    final data = requestDoc.data()!;
+    final requesterId = data['requesterId'] as String;
+    final requesterName = data['requesterName'] as String;
+    final requesterAvatar = data['requesterAvatar'] as String;
+
+    // Update request status to accepted
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .doc(requestId)
+        .update({'status': 'accepted'});
+
+    // Add to team
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('team')
+        .add({
+      'userId': requesterId,
+      'name': requesterName,
+      'avatar': requesterAvatar,
+      'status': 'active',
+      'joinedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Update professional count
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .update({
+      'professionalCount': FieldValue.increment(1),
+    });
+  }
+
+  @override
+  Future<void> rejectWorkRequest(String businessId, String requestId) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .doc(requestId)
+        .update({'status': 'rejected'});
+  }
 }
+
