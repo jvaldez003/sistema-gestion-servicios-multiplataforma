@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/widgets/app_cached_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -39,19 +39,18 @@ class BusinessCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundImage: business.avatarUrl.isNotEmpty
-                        ? CachedNetworkImageProvider(business.avatarUrl)
-                        : null,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: business.avatarUrl.isEmpty
-                        ? Text(
+                    child: business.avatarUrl.isNotEmpty
+                        ? AppCachedImage(
+                            imageUrl: business.avatarUrl,
+                            borderRadius: BorderRadius.circular(24),
+                          )
+                        : Text(
                             business.name.substring(0, 1).toUpperCase(),
                             style: AppTypography.titleMedium.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                             ),
-                          )
-                        : null,
+                          ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -143,46 +142,17 @@ class BusinessCard extends StatelessWidget {
               ),
             ),
 
-            // Main Image with Overlays (only if gallery images exist)
-            if (business.galleryImages.isNotEmpty)
+            // Main Image with Overlays (show if gallery or main image exists)
+            if (business.galleryImages.isNotEmpty || business.imageUrl.isNotEmpty)
               Stack(
                 children: [
-                  ClipRRect(
+                  AppCachedImage(
+                    imageUrl: business.galleryImages.isNotEmpty
+                        ? business.galleryImages.first
+                        : business.imageUrl,
+                    height: 200,
+                    width: double.infinity,
                     borderRadius: BorderRadius.circular(24),
-                    child: CachedNetworkImage(
-                      imageUrl: business.galleryImages.isNotEmpty
-                          ? business.galleryImages.first
-                          : business.imageUrl,
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.image_not_supported_outlined,
-                              size: 40, color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ),
                   ),
                   // Gradient Overlay
                   Positioned.fill(

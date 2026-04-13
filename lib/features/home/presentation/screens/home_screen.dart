@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -8,7 +9,11 @@ import '../widgets/appointments_tab.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/promotional_banner.dart';
 import '../providers/business_providers.dart';
+import '../providers/post_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/profile_tab.dart';
+import '../widgets/post_card.dart';
+import '../../../../core/widgets/app_cached_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -77,11 +82,15 @@ class ExplorarTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final businessesAsync = ref.watch(businessesStreamProvider);
+    final postsAsync = ref.watch(globalFeedProvider);
+    final authState = ref.watch(authStateProvider);
+    final currentUserId = authState.value?.id ?? '';
 
     return SafeArea(
       child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          // Custom App Bar
+          // Header FlowServ
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -92,138 +101,213 @@ class ExplorarTab extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.flash_on,
-                              color: AppColors.primary, size: 28),
+                          const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 28),
                           const SizedBox(width: 8),
                           Text(
                             'FlowServ',
-                            style: AppTypography.h2.copyWith(
-                              color: AppColors.primary,
-                            ),
+                            style: AppTypography.h2.copyWith(color: AppColors.primary, fontWeight: FontWeight.w900, letterSpacing: -0.5),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
+                          const Icon(Icons.location_on_rounded, size: 12, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
                           Text(
-                            'Ubicación no detectada',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            'Explorar en tu zona',
+                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ],
                   ),
                   const Spacer(),
-                  _buildHeaderIcon(Icons.search),
+                  _buildHeaderIcon(Icons.search_rounded),
                   const SizedBox(width: AppSpacing.md),
-                  _buildHeaderIcon(Icons.notifications_none_outlined,
-                      showBadge: true),
+                  _buildHeaderIcon(Icons.notifications_none_rounded, showBadge: true),
                 ],
               ),
             ),
           ),
 
-          // Categories
-          const SliverToBoxAdapter(
-            child: CategorySelector(),
-          ),
+          // Categories Horizontal
+          const SliverToBoxAdapter(child: CategorySelector()),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
 
-          const SliverToBoxAdapter(
-            child: SizedBox(height: AppSpacing.xl),
-          ),
+          // Banner
+          const SliverToBoxAdapter(child: PromotionalBanner()),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
 
-          // Promotional Banner
-          const SliverToBoxAdapter(
-            child: PromotionalBanner(),
-          ),
-
-          const SliverToBoxAdapter(
-            child: SizedBox(height: AppSpacing.xl),
-          ),
-
-          // Trends
-          const SliverToBoxAdapter(child: SizedBox.shrink()),
-
-          const SliverToBoxAdapter(
-            child: SizedBox(height: AppSpacing.xl),
-          ),
-
-          // Popular Section
-          businessesAsync.when(
-            data: (businesses) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Text('🔥', style: TextStyle(fontSize: 18)),
-                            const SizedBox(width: 8),
-                            Column(
+          // Top Businesses Section (Horizontal)
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Negocios Destacados',
+                        style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('Ver todos'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                businessesAsync.when(
+                  data: (businesses) => SizedBox(
+                    height: 240, // Increased height for the button
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(left: AppSpacing.lg),
+                      itemCount: businesses.length,
+                      itemBuilder: (context, index) {
+                        final b = businesses[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/business/${b.id}', extra: b),
+                          child: Container(
+                            width: 160,
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                              ],
+                            ),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Populares cerca de ti',
-                                  style: AppTypography.titleMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                  child: b.avatarUrl.isNotEmpty || b.imageUrl.isNotEmpty
+                                    ? AppCachedImage(
+                                        imageUrl: b.avatarUrl.isNotEmpty ? b.avatarUrl : b.imageUrl,
+                                        height: 100,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        height: 100,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              AppColors.primary.withOpacity(0.8),
+                                              AppColors.primary,
+                                            ],
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            b.name.isNotEmpty ? b.name[0].toUpperCase() : '?',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 40,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        b.name,
+                                        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            b.rating.toString(),
+                                            style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  '${businesses.length} resultados',
-                                  style: AppTypography.bodySmall,
+                                const Spacer(),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 36,
+                                    child: ElevatedButton(
+                                      onPressed: () => context.push('/business/${b.id}/booking', extra: b),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('Reservar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        TextButton.icon(
-                          onPressed: () {},
-                          icon:
-                              const Icon(Icons.location_on_outlined, size: 14),
-                          label: const Text('Ver mapa'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            textStyle: AppTypography.bodySmall.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
+                  ),
+                  loading: () => const SizedBox(height: 180, child: Center(child: CircularProgressIndicator())),
+                  error: (err, _) => const SizedBox.shrink(),
                 ),
-              ),
-            ),
-            loading: () => const SliverToBoxAdapter(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.xxl),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-            ),
-            error: (err, stack) => SliverToBoxAdapter(
-              child: Center(child: Text('Error: $err')),
+              ],
             ),
           ),
 
-          // Business List
-          businessesAsync.when(
-            data: (businesses) {
-              if (businesses.isEmpty) {
-                return const SliverToBoxAdapter(
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+          // Social Feed Section Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explora Tendencias',
+                    style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Descubre los mejores trabajos de hoy',
+                    style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+              ),
+            ),
+          ),
+
+          // Social Feed Items
+          postsAsync.when(
+            data: (posts) {
+              if (posts.isEmpty) {
+                return const SliverFillRemaining(
+                  hasScrollBody: false,
                   child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.xxl),
-                      child: Text('No hay negocios registrados aún'),
-                    ),
+                    child: Text('No hay publicaciones recientes'),
                   ),
                 );
               }
@@ -231,17 +315,55 @@ class ExplorarTab extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        BusinessCard(business: businesses[index]),
-                    childCount: businesses.length,
+                    (context, index) => PostCard(
+                      post: posts[index],
+                      currentUserId: currentUserId,
+                    ),
+                    childCount: posts.length,
                   ),
                 ),
               );
             },
-            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            error: (err, stack) =>
-                const SliverToBoxAdapter(child: SizedBox.shrink()),
+            loading: () => const SliverToBoxAdapter(
+              child: Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
+            ),
+            error: (err, _) {
+              if (err.toString().contains('failed-precondition')) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 32),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Configurando el Feed Social',
+                            style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Firebase está preparando el índice necesario. Por favor, haz clic en el enlace del error anterior en tu consola para activarlo. Esto solo toma un par de minutos.',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SliverToBoxAdapter(child: Center(child: Text('Error: $err')));
+            },
           ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
         ],
       ),
     );

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:typed_data';
 import '../../domain/models/business.dart';
 import '../../domain/repositories/business_repository.dart';
 
@@ -197,6 +199,7 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .map((snapshot) => snapshot.docs.map((doc) {
               final data = doc.data();
               data['id'] = doc.id;
+              data['businessId'] = businessId; // Fix for comment path error
               return data;
             }).toList());
   }
@@ -254,6 +257,46 @@ class FirebaseBusinessRepository implements BusinessRepository {
   }
 
   @override
+  Future<void> updateService(String businessId, String serviceId, Map<String, dynamic> service) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('services')
+        .doc(serviceId)
+        .update(service);
+  }
+
+  @override
+  Future<void> updateProduct(String businessId, String productId, Map<String, dynamic> product) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('products')
+        .doc(productId)
+        .update(product);
+  }
+
+  @override
+  Future<void> updatePost(String businessId, String postId, Map<String, dynamic> post) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .doc(postId)
+        .update(post);
+  }
+
+  @override
+  Future<void> updateTeamMember(String businessId, String memberId, Map<String, dynamic> member) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('team')
+        .doc(memberId)
+        .update(member);
+  }
+
+  @override
   Stream<bool> isFollowingBusiness(String businessId, String userId) {
     return _firestore
         .collection('businesses')
@@ -268,12 +311,14 @@ class FirebaseBusinessRepository implements BusinessRepository {
   Future<void> toggleFollowBusiness(String businessId, String userId) async {
     final businessRef = _firestore.collection('businesses').doc(businessId);
     final followerRef = businessRef.collection('followers').doc(userId);
+    final userFavoriteRef = _firestore.collection('users').doc(userId).collection('favorites').doc(businessId);
 
     return _firestore.runTransaction((transaction) async {
       final followerSnapshot = await transaction.get(followerRef);
       
       if (followerSnapshot.exists) {
         transaction.delete(followerRef);
+        transaction.delete(userFavoriteRef);
         transaction.update(businessRef, {
           'followerCount': FieldValue.increment(-1),
         });
@@ -281,10 +326,59 @@ class FirebaseBusinessRepository implements BusinessRepository {
         transaction.set(followerRef, {
           'followedAt': FieldValue.serverTimestamp(),
         });
+        transaction.set(userFavoriteRef, {
+          'businessId': businessId,
+          'followedAt': FieldValue.serverTimestamp(),
+        });
         transaction.update(businessRef, {
           'followerCount': FieldValue.increment(1),
         });
       }
+    });
+  }
+
+  @override
+  Stream<List<Business>> getFollowedBusinessesStream(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('favorites')
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final businessIds = snapshot.docs.map((doc) => doc.id).toList();
+      if (businessIds.isEmpty) return [];
+
+      // Fetch each business doc. For production, consider caching or batching.
+      final businesses = await Future.wait(
+        businessIds.map((id) => _firestore.collection('businesses').doc(id).get())
+      );
+
+      return businesses
+          .where((doc) => doc.exists)
+          .map((doc) {
+            final data = doc.data()!;
+            return Business(
+              id: doc.id,
+              name: data['name'] ?? '',
+              category: data['category'] ?? '',
+              description: data['description'] ?? '',
+              imageUrl: data['imageUrl'] ?? '',
+              avatarUrl: data['avatarUrl'] ?? '',
+              rating: (data['rating'] ?? 0.0).toDouble(),
+              totalReviews: data['totalReviews'] ?? 0,
+              distance: (data['distance'] ?? 0.0).toDouble(),
+              isVerified: data['isVerified'] ?? false,
+              isTop: data['isTop'] ?? false,
+              startingPrice: (data['startingPrice'] ?? 0.0).toDouble(),
+              tags: List<String>.from(data['tags'] ?? []),
+              likes: data['likes'] ?? 0,
+              comments: data['comments'] ?? 0,
+              professionalCount: data['professionalCount'] ?? 0,
+              followerCount: data['followerCount'] ?? 0,
+              galleryImages: List<String>.from(data['galleryImages'] ?? []),
+            );
+          })
+          .toList();
     });
   }
 
@@ -410,6 +504,136 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map((snapshot) => snapshot.docs.isNotEmpty);
+  }
+
+  @override
+  Future<void> likePost(String businessId, String postId, String userId) async {
+    final postRef = _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .doc(postId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(postRef);
+      if (!snapshot.exists) return;
+
+      final data = snapshot.data()!;
+      final likedByUsers = List<String>.from(data['likedByUsers'] ?? []);
+
+      if (likedByUsers.contains(userId)) {
+        likedByUsers.remove(userId);
+        transaction.update(postRef, {
+          'likesCount': FieldValue.increment(-1),
+          'likedByUsers': likedByUsers,
+        });
+      } else {
+        likedByUsers.add(userId);
+        transaction.update(postRef, {
+          'likesCount': FieldValue.increment(1),
+          'likedByUsers': likedByUsers,
+        });
+      }
+    });
+  }
+
+  @override
+  Future<void> addComment(
+      String businessId, String postId, Map<String, dynamic> comment) async {
+    final postRef = _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .doc(postId);
+
+    await _firestore.runTransaction((transaction) async {
+      final commentRef = postRef.collection('comments').doc();
+      transaction.set(commentRef, {
+        ...comment,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      transaction.update(postRef, {
+        'commentsCount': FieldValue.increment(1),
+      });
+    });
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> getCommentsStream(
+      String businessId, String postId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> getGlobalFeedStream() {
+    return _firestore
+        .collectionGroup('posts')
+        .snapshots()
+        .map((snapshot) {
+          final posts = snapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            data['businessId'] ??= doc.reference.parent.parent?.id;
+            return data;
+          }).toList();
+
+          // Sort in memory to avoid index requirement
+          posts.sort((a, b) {
+            final aTime = a['createdAt'] as Timestamp?;
+            final bTime = b['createdAt'] as Timestamp?;
+            if (aTime == null) return 1;
+            if (bTime == null) return -1;
+            return bTime.compareTo(aTime);
+          });
+
+          return posts;
+        });
+  }
+
+  @override
+  Future<String> uploadImage(String path, List<int> bytes, String mimeType) async {
+    try {
+      final ref = FirebaseStorage.instance.ref().child(path);
+      final metadata = SettableMetadata(
+        contentType: mimeType,
+        customMetadata: {'uploaded_at': DateTime.now().toIso8601String()},
+      );
+      
+      final uint8List = Uint8List.fromList(bytes);
+      
+      // Use putData and wait for the task to complete
+      final uploadTask = ref.putData(uint8List, metadata);
+      
+      // Monitoring task state can be helpful for debugging
+      final snapshot = await uploadTask;
+      
+      if (snapshot.state == TaskState.success) {
+        return await snapshot.ref.getDownloadURL();
+      } else {
+        throw Exception('Estado de subida no exitoso: ${snapshot.state}');
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Permiso denegado: Revisa las reglas de seguridad de Firebase Storage.');
+      } else if (e.code == 'canceled') {
+        throw Exception('Operación cancelada por el usuario o el sistema.');
+      }
+      rethrow;
+    } catch (e) {
+      throw Exception('Error inesperado al subir imagen: $e');
+    }
   }
 }
 

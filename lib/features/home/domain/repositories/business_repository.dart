@@ -20,6 +20,11 @@ abstract class BusinessRepository {
   Future<void> deleteProduct(String businessId, String productId);
   Future<void> deletePost(String businessId, String postId);
 
+  Future<void> updateService(String businessId, String serviceId, Map<String, dynamic> service);
+  Future<void> updateProduct(String businessId, String productId, Map<String, dynamic> product);
+  Future<void> updatePost(String businessId, String postId, Map<String, dynamic> post);
+  Future<void> updateTeamMember(String businessId, String memberId, Map<String, dynamic> member);
+
   // Work Request methods
   Future<void> sendWorkRequest(
       String businessId, String requesterId, String requesterName, String requesterAvatar);
@@ -28,4 +33,17 @@ abstract class BusinessRepository {
   Future<void> rejectWorkRequest(String businessId, String requestId);
   Stream<bool> isMember(String businessId, String userId);
   Stream<bool> hasPendingRequest(String businessId, String userId);
+  
+  // Image Upload
+  Future<String> uploadImage(String path, List<int> bytes, String mimeType);
+  Future<void> updateGalleryImages(String businessId, List<String> imageUrls);
+
+  // Social interactions
+  Future<void> likePost(String businessId, String postId, String userId);
+  Future<void> addComment(String businessId, String postId, Map<String, dynamic> comment);
+  Stream<List<Map<String, dynamic>>> getCommentsStream(String businessId, String postId);
+  Stream<List<Map<String, dynamic>>> getGlobalFeedStream();
+
+  // User relations
+  Stream<List<Business>> getFollowedBusinessesStream(String userId);
 }

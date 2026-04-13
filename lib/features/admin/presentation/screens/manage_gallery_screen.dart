@@ -4,6 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
+import 'new_post_flow.dart';
 
 class ManageGalleryScreen extends ConsumerWidget {
   final String businessId;
@@ -62,41 +64,55 @@ class ManageGalleryScreen extends ConsumerWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    ClipRRect(
+                    AppCachedImage(
+                      imageUrl: post['imageUrl'],
                       borderRadius: BorderRadius.circular(16),
-                      child: post['imageUrl'] != null &&
-                              post['imageUrl'].toString().isNotEmpty
-                          ? Image.network(
-                              post['imageUrl'],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildImagePlaceholder(),
-                            )
-                          : _buildImagePlaceholder(),
                     ),
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: GestureDetector(
-                        onTap: () {
-                          _confirmDelete(context, ref, post['id'], 'esta foto');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _confirmDelete(context, ref, post['id'], 'esta foto'),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: const Icon(Icons.delete_outline,
+                                  color: Colors.white, size: 20),
+                            ),
                           ),
-                          child: const Icon(Icons.delete_outline,
-                              color: Colors.white, size: 20),
-                        ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => _editPost(context, post),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: const Icon(Icons.edit_outlined,
+                                  color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Positioned(
@@ -142,6 +158,18 @@ class ManageGalleryScreen extends ConsumerWidget {
       ),
       child: const Icon(Icons.image_not_supported_outlined,
           color: AppColors.textSecondary, size: 36),
+    );
+  }
+
+  void _editPost(BuildContext context, Map<String, dynamic> post) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NewPostFlow(
+        businessId: businessId,
+        existingPost: post,
+      ),
     );
   }
 

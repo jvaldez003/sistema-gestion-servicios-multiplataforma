@@ -16,6 +16,8 @@ import 'dart:convert';
 import 'manage_products_screen.dart';
 import 'manage_gallery_screen.dart';
 import 'manage_services_screen.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -275,7 +277,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis),
                     ),
                     GestureDetector(
-                      onTap: () => _addGalleryImage(context, business.id),
+                      onTap: () => _addGalleryImage(context, ref, business.id),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
@@ -356,34 +358,18 @@ class AdminDashboardScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(right: 10),
                             child: Stack(
                               children: [
-                                ClipRRect(
+                                AppCachedImage(
+                                  imageUrl: images[index],
+                                  width: 100,
+                                  height: 100,
                                   borderRadius: BorderRadius.circular(14),
-                                  child: Image.network(
-                                    images[index],
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(
-                                          Icons.broken_image_outlined,
-                                          color: AppColors.textSecondary),
-                                    ),
-                                  ),
                                 ),
                                 Positioned(
                                   top: 4,
                                   right: 4,
                                   child: GestureDetector(
                                     onTap: () => _removeGalleryImage(
-                                        business.id, images, index),
+                                        context, ref, business.id, images, index),
                                     child: Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
@@ -870,7 +856,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _addGalleryImage(BuildContext context, String businessId) {
+  void _addGalleryImage(BuildContext context, WidgetRef ref, String businessId) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -913,10 +899,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: const Text('Seleccionar de tus fotos',
                     style: TextStyle(fontSize: 12)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await _pickImageFromGallery(businessId);
-                },
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _pickImageFromGallery(ref, businessId);
+                  },
               ),
               const SizedBox(height: 8),
               // Option 2: From URL
@@ -935,7 +921,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _addGalleryImageFromUrl(context, businessId);
+                  _addGalleryImageFromUrl(context, ref, businessId);
                 },
               ),
               const SizedBox(height: 12),
@@ -946,31 +932,43 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickImageFromGallery(String businessId) async {
+  Future<void> _pickImageFromGallery(WidgetRef ref, String businessId) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
         source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+    
     if (picked != null) {
       final bytes = await picked.readAsBytes();
-      final base64Str = base64Encode(bytes);
       final mimeType = picked.mimeType ?? 'image/jpeg';
-      final dataUri = 'data:$mimeType;base64,$base64Str';
+      
+      // Upload to Storage
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path = 'businesses/$businessId/gallery/$fileName';
+      
+      try {
+        final repo = ref.read(businessRepositoryProvider);
+        final downloadUrl = await repo.uploadImage(
+          path, 
+          bytes, 
+          mimeType
+        );
 
-      final doc = await FirebaseFirestore.instance
-          .collection('businesses')
-          .doc(businessId)
-          .get();
-      final data = doc.data() ?? {};
-      final images = List<String>.from(data['galleryImages'] ?? []);
-      images.add(dataUri);
-      await FirebaseFirestore.instance
-          .collection('businesses')
-          .doc(businessId)
-          .update({'galleryImages': images});
+        final doc = await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(businessId)
+            .get();
+        final data = doc.data() ?? {};
+        final images = List<String>.from(data['galleryImages'] ?? []);
+        images.add(downloadUrl);
+        
+        await repo.updateGalleryImages(businessId, images);
+      } catch (e) {
+        debugPrint('Error uploading image: $e');
+      }
     }
   }
 
-  void _addGalleryImageFromUrl(BuildContext context, String businessId) {
+  void _addGalleryImageFromUrl(BuildContext context, WidgetRef ref, String businessId) {
     final urlController = TextEditingController();
     showDialog(
       context: context,
@@ -1020,10 +1018,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                 final data = doc.data() ?? {};
                 final images = List<String>.from(data['galleryImages'] ?? []);
                 images.add(urlController.text.trim());
-                await FirebaseFirestore.instance
-                    .collection('businesses')
-                    .doc(businessId)
-                    .update({'galleryImages': images});
+                
+                await ref.read(businessRepositoryProvider)
+                    .updateGalleryImages(businessId, images);
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
@@ -1041,13 +1038,20 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   void _removeGalleryImage(
-      String businessId, List<String> images, int index) async {
+      BuildContext context, WidgetRef ref, String businessId, List<String> images, int index) async {
     final updatedImages = List<String>.from(images);
     updatedImages.removeAt(index);
-    await FirebaseFirestore.instance
-        .collection('businesses')
-        .doc(businessId)
-        .update({'galleryImages': updatedImages});
+    
+    try {
+      await ref.read(businessRepositoryProvider)
+          .updateGalleryImages(businessId, updatedImages);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al eliminar imagen: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildPublishCard(

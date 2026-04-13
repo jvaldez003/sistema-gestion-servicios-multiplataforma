@@ -285,8 +285,9 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                       : SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final member =
-                                  members[index].data() as Map<String, dynamic>;
+                              final memberDoc = members[index];
+                              final member = memberDoc.data() as Map<String, dynamic>;
+                              member['id'] = memberDoc.id;
                               return _buildMemberCard(member);
                             },
                             childCount: members.length,
@@ -371,6 +372,61 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => AddMemberFlow(businessId: widget.businessId),
     );
+  }
+
+  void _editMember(Map<String, dynamic> member) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddMemberFlow(
+        businessId: widget.businessId,
+        existingMember: member,
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteMember(Map<String, dynamic> member) async {
+    final name = member['name'] ?? 'este miembro';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar miembro'),
+        content: Text('¿Estás seguro de que deseas eliminar a "$name" del equipo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(widget.businessId)
+            .collection('team')
+            .doc(member['id'])
+            .delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Miembro eliminado con éxito')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildHeaderStat(String value, String label, Color textColor,
@@ -537,10 +593,37 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () {},
-                child:
-                    const Icon(Icons.more_vert, color: AppColors.textSecondary),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _editMember(member);
+                  } else if (value == 'delete') {
+                    _confirmDeleteMember(member);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Editar'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

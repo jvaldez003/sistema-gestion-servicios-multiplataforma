@@ -11,7 +11,13 @@ import '../widgets/content_stepper.dart';
 
 class NewProductFlow extends ConsumerStatefulWidget {
   final String businessId;
-  const NewProductFlow({super.key, required this.businessId});
+  final Map<String, dynamic>? existingProduct;
+
+  const NewProductFlow({
+    super.key, 
+    required this.businessId,
+    this.existingProduct,
+  });
 
   @override
   ConsumerState<NewProductFlow> createState() => _NewProductFlowState();
@@ -24,12 +30,22 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedImage;
 
-  final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _stockController = TextEditingController();
-  final _descController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
+  late TextEditingController _descController;
 
   bool _isPublishing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.existingProduct;
+    _nameController = TextEditingController(text: p?['name']?.toString() ?? '');
+    _priceController = TextEditingController(text: p?['price']?.toString() ?? '');
+    _stockController = TextEditingController(text: p?['stock']?.toString() ?? '');
+    _descController = TextEditingController(text: p?['description']?.toString() ?? '');
+  }
 
   @override
   void dispose() {
@@ -50,7 +66,7 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
   }
 
   void _nextStep() {
-    if (_currentStep == 1 && _selectedImage == null) {
+    if (_currentStep == 1 && _selectedImage == null && widget.existingProduct == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Por favor selecciona una foto del producto')),
@@ -84,33 +100,39 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
     setState(() => _isPublishing = true);
     try {
       final repo = ref.read(businessRepositoryProvider);
+      final isUpdating = widget.existingProduct != null;
 
-      String finalImageUrl = '';
+      String finalImageUrl = widget.existingProduct?['imageUrl'] ?? '';
 
       if (_selectedImage != null) {
-        if (kIsWeb) {
-          final bytes = await _selectedImage!.readAsBytes();
-          final base64String = base64Encode(bytes);
-          finalImageUrl = 'data:image/jpeg;base64,$base64String';
-        } else {
-          // Si no es web, subiremos a storage luego
-          finalImageUrl = 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&q=80&w=800';
-        }
+        final bytes = await _selectedImage!.readAsBytes();
+        final mimeType = _selectedImage!.mimeType ?? 'image/jpeg';
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final path = 'businesses/${widget.businessId}/products/$fileName';
+        
+        finalImageUrl = await repo.uploadImage(path, bytes, mimeType);
       }
 
-      await repo.addProduct(widget.businessId, {
+      final productData = {
         'name': _nameController.text,
         'price': double.tryParse(_priceController.text) ?? 0.0,
         'stock': int.tryParse(_stockController.text) ?? 0,
         'description': _descController.text,
         'imageUrl': finalImageUrl.isNotEmpty ? finalImageUrl : null,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      if (isUpdating) {
+        await repo.updateProduct(widget.businessId, widget.existingProduct!['id'], productData);
+      } else {
+        productData['createdAt'] = DateTime.now().toIso8601String();
+        await repo.addProduct(widget.businessId, productData);
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Producto agregado con éxito!')),
+          SnackBar(content: Text(isUpdating ? '¡Producto actualizado!' : '¡Producto agregado con éxito!')),
         );
       }
     } catch (e) {
@@ -126,15 +148,18 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final isUpdating = widget.existingProduct != null;
     return ContentStepper(
-      title: 'Nuevo producto',
+      title: isUpdating ? 'Editar producto' : 'Nuevo producto',
       currentStep: _currentStep,
       totalSteps: _totalSteps,
       themeColor: const Color(0xFFC084FC),
       onNext: _nextStep,
       onBack: _previousStep,
       nextButtonText:
-          _currentStep == _totalSteps ? 'Agregar al catálogo' : 'Continuar',
+          _currentStep == _totalSteps 
+            ? (isUpdating ? 'Guardar cambios' : 'Agregar al catálogo') 
+            : 'Continuar',
       steps: [
         // Step 1: Photos
         _buildPhotoStep(),

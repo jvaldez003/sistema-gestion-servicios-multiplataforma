@@ -12,7 +12,13 @@ import '../widgets/content_stepper.dart';
 
 class NewPostFlow extends ConsumerStatefulWidget {
   final String businessId;
-  const NewPostFlow({super.key, required this.businessId});
+  final Map<String, dynamic>? existingPost;
+
+  const NewPostFlow({
+    super.key, 
+    required this.businessId,
+    this.existingPost,
+  });
 
   @override
   ConsumerState<NewPostFlow> createState() => _NewPostFlowState();
@@ -25,8 +31,22 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> _selectedImages = [];
   String? _selectedServiceId;
-  String _description = '';
+  late TextEditingController _descController;
   bool _isPublishing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.existingPost;
+    _descController = TextEditingController(text: p?['content'] ?? '');
+    _selectedServiceId = p?['serviceId'];
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
@@ -38,13 +58,13 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   }
 
   void _nextStep() {
-    if (_currentStep == 1 && _selectedImages.isEmpty) {
+    if (_currentStep == 1 && _selectedImages.isEmpty && widget.existingPost == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor selecciona al menos una foto')),
       );
       return;
     }
-    if (_currentStep == 2 && _description.isEmpty) {
+    if (_currentStep == 2 && _descController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor agrega una descripción')),
       );
@@ -68,38 +88,45 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
     setState(() => _isPublishing = true);
     try {
       final repo = ref.read(businessRepositoryProvider);
+      final isUpdating = widget.existingPost != null;
 
-      String finalImageUrl = '';
+      String finalImageUrl = widget.existingPost?['imageUrl'] ?? '';
 
       if (_selectedImages.isNotEmpty) {
-        if (kIsWeb) {
-          final bytes = await _selectedImages.first.readAsBytes();
-          final base64String = base64Encode(bytes);
-          finalImageUrl = 'data:image/jpeg;base64,$base64String';
-        } else {
-          // Si no es web, subiremos a storage luego. Por ahora usamos mock
-          finalImageUrl = 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800';
-        }
+        final image = _selectedImages.first;
+        final bytes = await image.readAsBytes();
+        final mimeType = image.mimeType ?? 'image/jpeg';
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final path = 'businesses/${widget.businessId}/posts/$fileName';
+        
+        finalImageUrl = await repo.uploadImage(path, bytes, mimeType);
       }
 
-      await repo.addPost(widget.businessId, {
-        'title': _description.split('\n').first.substring(0, _description.length > 20 ? 20 : _description.length), 
-        'content': _description,
+      final postData = {
+        'title': _descController.text.split('\n').first.substring(0, _descController.text.length > 20 ? 20 : _descController.text.length), 
+        'content': _descController.text,
         'imageUrl': finalImageUrl.isNotEmpty ? finalImageUrl : null,
         'serviceId': _selectedServiceId,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      if (isUpdating) {
+        await repo.updatePost(widget.businessId, widget.existingPost!['id'], postData);
+      } else {
+        postData['createdAt'] = DateTime.now().toIso8601String();
+        await repo.addPost(widget.businessId, postData);
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Publicación creada con éxito!')),
+          SnackBar(content: Text(isUpdating ? '¡Publicación actualizada!' : '¡Publicación creada con éxito!')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al publicar: $e')),
+          SnackBar(content: Text('Error al procesar: $e')),
         );
       }
     } finally {
@@ -110,16 +137,19 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   @override
   Widget build(BuildContext context) {
     final servicesAsync = ref.watch(adminServicesProvider);
+    final isUpdating = widget.existingPost != null;
 
     return ContentStepper(
-      title: 'Nueva publicación',
+      title: isUpdating ? 'Editar publicación' : 'Nueva publicación',
       currentStep: _currentStep,
       totalSteps: _totalSteps,
       themeColor: const Color(0xFFF97316),
       onNext: _nextStep,
       onBack: _previousStep,
       nextButtonText:
-          _currentStep == _totalSteps ? 'Publicar en galería' : 'Continuar',
+          _currentStep == _totalSteps 
+            ? (isUpdating ? 'Guardar cambios' : 'Publicar en galería') 
+            : 'Continuar',
       steps: [
         // Step 1: Photos
         _buildPhotoStep(),
@@ -262,7 +292,7 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
         const SizedBox(height: 12),
         TextField(
           maxLines: 4,
-          onChanged: (val) => setState(() => _description = val),
+          controller: _descController,
           decoration: InputDecoration(
             hintText:
                 'Describe el trabajo, el servicio o añade una historia...',
@@ -305,7 +335,7 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
         ),
         const SizedBox(height: 16),
         Text(
-          _description.isEmpty ? 'Sin descripción' : _description,
+          _descController.text.isEmpty ? 'Sin descripción' : _descController.text,
           style: const TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),

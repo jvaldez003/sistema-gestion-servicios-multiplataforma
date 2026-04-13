@@ -4,6 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
+import 'new_product_flow.dart';
 
 class ManageProductsScreen extends ConsumerWidget {
   final String businessId;
@@ -52,19 +54,12 @@ class ManageProductsScreen extends ConsumerWidget {
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(12),
-                  leading: ClipRRect(
+                  leading: AppCachedImage(
+                    imageUrl: product['imageUrl'],
+                    width: 60,
+                    height: 60,
                     borderRadius: BorderRadius.circular(12),
-                    child: product['imageUrl'] != null &&
-                            product['imageUrl'].toString().isNotEmpty
-                        ? Image.network(
-                            product['imageUrl'],
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildImagePlaceholder(),
-                          )
-                        : _buildImagePlaceholder(),
+                    errorIcon: Icons.inventory_2_outlined,
                   ),
                   title: Text(
                     product['name'] ?? 'Producto nuevo',
@@ -77,12 +72,23 @@ class ManageProductsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  trailing: IconButton(
-                    icon:
-                        const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    onPressed: () {
-                      _confirmDelete(context, ref, product['id'], product['name']);
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                        onPressed: () {
+                          _editProduct(context, product);
+                        },
+                      ),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        onPressed: () {
+                          _confirmDelete(context, ref, product['id'], product['name']);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -105,6 +111,18 @@ class ManageProductsScreen extends ConsumerWidget {
       ),
       child: const Icon(Icons.inventory_2_outlined,
           color: AppColors.textSecondary),
+    );
+  }
+
+  Future<void> _editProduct(BuildContext context, Map<String, dynamic> product) async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NewProductFlow(
+        businessId: businessId,
+        existingProduct: product,
+      ),
     );
   }
 

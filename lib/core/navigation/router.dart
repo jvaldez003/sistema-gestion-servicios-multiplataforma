@@ -37,15 +37,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/business/:id',
         builder: (context, state) {
-          final business = state.extra as Business;
-          return BusinessProfileScreen(business: business);
+          final id = state.pathParameters['id']!;
+          final business = state.extra as Business?;
+          return BusinessProfileScreen(business: business, businessId: id);
         },
         routes: [
           GoRoute(
             path: 'booking',
             builder: (context, state) {
-              final business = state.extra as Business;
-              return BookingFlowScreen(business: business);
+              final id = state.pathParameters['id']!;
+              final business = state.extra as Business?;
+              return BookingFlowScreen(business: business, businessId: id);
             },
           ),
         ],

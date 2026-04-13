@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_cached_image.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../admin/presentation/providers/admin_providers.dart';
 import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
+import '../providers/user_stats_providers.dart';
+import '../providers/booking_providers.dart';
+import '../../domain/models/business.dart';
+import '../widgets/business_card.dart';
+import '../widgets/business_small_card.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../auth/domain/entities/app_user.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -13,21 +22,23 @@ class ProfileTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
-    final user = authState.user;
+    final userProfileAsync = ref.watch(userProfileProvider);
+    final user = userProfileAsync.value ?? authState.user;
     final businessAsync = ref.watch(adminBusinessProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          // Header with Purple Background
+          // Header with Purple Gradient
           SliverToBoxAdapter(
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 _buildHeader(context),
                 Positioned(
-                  top: 100,
+                  top: 110,
                   left: AppSpacing.md,
                   right: AppSpacing.md,
                   child: _buildProfileCard(context, user),
@@ -37,12 +48,12 @@ class ProfileTab extends ConsumerWidget {
           ),
 
           const SliverToBoxAdapter(
-            child: SizedBox(height: 150), // Space for overlapping card
+            child: SizedBox(height: 160), // Adjusted space for overlapping card
           ),
 
           // Stats Section
           SliverToBoxAdapter(
-            child: _buildStatsRow(context),
+            child: _buildStatsRow(context, ref),
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
@@ -50,13 +61,13 @@ class ProfileTab extends ConsumerWidget {
           // Favoritos Section Header
           SliverToBoxAdapter(
             child: _buildSectionHeader(
-                context, 'Favoritos', '', Icons.favorite,
+                context, 'Negocios Favoritos', 'Ver todos', Icons.favorite,
                 color: AppColors.error),
           ),
 
           // Favorites Horizontal List
           SliverToBoxAdapter(
-            child: _buildFavoritesList(context),
+            child: _buildFavoritesList(context, ref),
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
@@ -134,28 +145,28 @@ class ProfileTab extends ConsumerWidget {
 
           // Actividad Section
           SliverToBoxAdapter(
-            child: _buildSectionHeader(context, 'ACTIVIDAD', '', Icons.work,
+            child: _buildSectionHeader(context, 'ACTIVIDAD', '', Icons.insights_rounded,
                 isCategory: true),
           ),
           SliverToBoxAdapter(
             child: _buildMenuContainer(context, [
               _buildMenuItem(
                 context,
-                icon: Icons.favorite_border,
-                title: 'Negocios favoritos',
-                subtitle: 'Ver mis favoritos',
+                icon: Icons.calendar_month_outlined,
+                title: 'Mis citas',
+                subtitle: 'Historial y próximas citas',
               ),
               _buildMenuItem(
                 context,
-                icon: Icons.business_center_outlined,
-                title: 'Mis postulaciones',
-                subtitle: 'Ver mis solicitudes',
+                icon: Icons.favorite_border_rounded,
+                title: 'Favoritos',
+                subtitle: 'Negocios que te encantan',
               ),
               _buildMenuItem(
                 context,
-                icon: Icons.shopping_cart_outlined,
+                icon: Icons.history_rounded,
                 title: 'Mis pedidos',
-                subtitle: 'Ver historial',
+                subtitle: 'Historial de compras',
                 isLast: true,
               ),
             ]),
@@ -237,31 +248,41 @@ class ProfileTab extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      height: 200,
+      height: 220,
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.primary,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            Color(0xFF6366F1), // Indigo blend
+          ],
+        ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
       ),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Mi Perfil',
-                style: AppTypography.h2.copyWith(color: Colors.white),
+                style: AppTypography.h2.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
               ),
               const Spacer(),
-              _buildHeaderIcon(Icons.notifications_none_outlined,
-                  showBadge: true),
+              _buildHeaderIcon(Icons.notifications_none_rounded, showBadge: true),
               const SizedBox(width: AppSpacing.md),
-              _buildHeaderIcon(Icons.edit_outlined),
+              _buildHeaderIcon(Icons.settings_outlined),
             ],
           ),
         ),
@@ -271,27 +292,28 @@ class ProfileTab extends ConsumerWidget {
 
   Widget _buildHeaderIcon(IconData icon, {bool showBadge = false}) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(icon, color: Colors.white, size: 22),
+          Icon(icon, color: Colors.white, size: 24),
           if (showBadge)
             Positioned(
-              top: 10,
+              top: 12,
               right: 12,
               child: Container(
-                width: 8,
-                height: 8,
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF97316),
+                  color: const Color(0xFF10B981), // Green for notifications
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 1.5),
+                  border: Border.all(color: AppColors.primary, width: 2),
                 ),
               ),
             ),
@@ -305,12 +327,12 @@ class ProfileTab extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -319,74 +341,96 @@ class ProfileTab extends ConsumerWidget {
           Stack(
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: 84,
+                height: 84,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primary, AppColors.primaryLight],
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Center(
-                  child: Text(
-                    (user?.name != null && user!.name!.isNotEmpty)
-                        ? user.name![0].toUpperCase()
-                        : 'M',
-                    style: AppTypography.h1.copyWith(
-                      color: Colors.white,
-                      fontSize: 32,
-                    ),
-                  ),
+                  child: user?.photoUrl != null && user!.photoUrl!.isNotEmpty
+                      ? AppCachedImage(
+                          imageUrl: user.photoUrl!,
+                          borderRadius: BorderRadius.circular(28),
+                        )
+                      : Text(
+                          (user?.name != null && user!.name!.isNotEmpty)
+                              ? user.name![0].toUpperCase()
+                              : '?',
+                          style: AppTypography.h1.copyWith(
+                            color: Colors.white,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                 ),
               ),
               Positioned(
-                bottom: -4,
-                right: -4,
+                bottom: -2,
+                right: -2,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.camera_alt_outlined,
-                          color: Colors.white, size: 12),
-                      const SizedBox(width: 2),
-                      Text(
-                        '+ Foto',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
                       ),
                     ],
                   ),
+                  child: const Icon(Icons.camera_alt,
+                      color: AppColors.primary, size: 16),
                 ),
               ),
             ],
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.name ?? 'Usuario',
+                  user?.name ?? 'Configurar Perfil',
                   style: AppTypography.titleLarge.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                if (user?.email != null)
-                  Text(
-                    user!.email!,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                const SizedBox(height: 4),
+                Text(
+                  user?.email ?? 'correo@ejemplo.com',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    'Miembro Silver',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                const SizedBox(height: 8),
-                const SizedBox.shrink(),
+                ),
               ],
             ),
           ),
@@ -395,17 +439,47 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(BuildContext context) {
+  Widget _buildStatsRow(BuildContext context, WidgetRef ref) {
+    final appointmentsAsync = ref.watch(userAppointmentsProvider);
+    final points = ref.watch(userPointsProvider);
+    final followedAsync = ref.watch(userFollowedBusinessesProvider);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildStatItem('12', 'Citas', Icons.calendar_month_outlined,
-              const Color(0xFFF97316)),
-          _buildStatItem('320', 'Puntos', Icons.star_outline, Colors.amber),
-          _buildStatItem(
-              '3', 'Favoritos', Icons.favorite_border, AppColors.error),
+          Expanded(
+            child: _buildStatItem(
+              appointmentsAsync.maybeWhen(
+                data: (appointments) => '${appointments.where((a) => a.status != 'cancelled').length}',
+                orElse: () => '...',
+              ),
+              'Citas',
+              Icons.calendar_month_rounded,
+              const Color(0xFFF97316),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatItem(
+              '$points',
+              'Puntos',
+              Icons.stars_rounded,
+              const Color(0xFFF59E0B),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatItem(
+              followedAsync.maybeWhen(
+                data: (followed) => '${followed.length}',
+                orElse: () => '...',
+              ),
+              'Favoritos',
+              Icons.favorite_rounded,
+              const Color(0xFFEF4444),
+            ),
+          ),
         ],
       ),
     );
@@ -413,23 +487,42 @@ class ProfileTab extends ConsumerWidget {
 
   Widget _buildStatItem(
       String value, String label, IconData icon, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: AppTypography.titleLarge.copyWith(
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-        ),
-        Text(
-          label,
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: AppTypography.titleLarge.copyWith(
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -471,17 +564,55 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildFavoritesList(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      child: Text(
-        'Aún no tienes negocios favoritos',
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontStyle: FontStyle.italic,
-        ),
-      ),
+  Widget _buildFavoritesList(BuildContext context, WidgetRef ref) {
+    final followedAsync = ref.watch(userFollowedBusinessesProvider);
+
+    return followedAsync.when(
+      data: (businesses) {
+        if (businesses.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Container(
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFF1F5F9)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.favorite_border_rounded, color: AppColors.textSecondary.withOpacity(0.3), size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aquí verás tus negocios favoritos',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 180, // Height for compact cards
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            itemCount: businesses.length,
+            itemBuilder: (context, index) {
+              final business = businesses[index];
+              return BusinessSmallCard(business: business);
+            },
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
 

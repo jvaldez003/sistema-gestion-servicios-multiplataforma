@@ -45,22 +45,6 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     });
   }
 
-  Widget _buildChevronButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(icon, color: AppColors.primary, size: 22),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(userAppointmentsProvider);
@@ -72,30 +56,48 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
           final selectedAppointments = groupedAppointments[_normalizeDate(_selectedDate)] ?? [];
 
           return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Mis Citas',
-                        style: AppTypography.h2,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
+                      Text('Mis Citas', style: AppTypography.h2),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Revisa tu agenda y tus próximas reservas',
-                        style: AppTypography.bodyMedium,
+                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                       ),
-                      const SizedBox(height: AppSpacing.xl),
-                      _buildCalendarCard(context, groupedAppointments),
-                      const SizedBox(height: AppSpacing.xl),
-                      _buildScheduleSection(selectedAppointments),
                     ],
                   ),
                 ),
               ),
+              SliverPadding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                sliver: SliverToBoxAdapter(
+                  child: _buildCalendarCard(context, groupedAppointments),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                sliver: SliverToBoxAdapter(
+                  child: _buildScheduleHeader(selectedAppointments.length),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                sliver: selectedAppointments.isEmpty
+                    ? SliverToBoxAdapter(child: _buildEmptyState())
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _buildAppointmentCard(selectedAppointments[index]),
+                          childCount: selectedAppointments.length,
+                        ),
+                      ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
             ],
           );
         },
@@ -106,93 +108,111 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
   }
 
   Widget _buildCalendarCard(BuildContext context, Map<DateTime, List<Appointment>> grouped) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildCalendarHeader(context),
-          const SizedBox(height: AppSpacing.md),
-          TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => _normalizeDate(day) == _normalizeDate(_selectedDate),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDate = selectedDay;
-                _focusedDay = focusedDay;
-              });
+    return Column(
+      children: [
+        _buildCalendarHeader(context),
+        const SizedBox(height: AppSpacing.lg),
+        SizedBox(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: 60, // Total days to show
+            itemBuilder: (context, index) {
+              final date = DateTime.now().subtract(const Duration(days: 15)).add(Duration(days: index));
+              final isSelected = _normalizeDate(date) == _normalizeDate(_selectedDate);
+              final isToday = _normalizeDate(date) == _normalizeDate(DateTime.now());
+              final hasEvents = grouped[_normalizeDate(date)]?.isNotEmpty ?? false;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedDate = date;
+                      _focusedDay = date;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 60,
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? const LinearGradient(
+                              colors: [AppColors.primary, AppColors.primaryLight],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      color: isSelected ? null : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected ? Colors.transparent : Colors.black.withOpacity(0.04),
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat('EEE', 'es').format(date).toUpperCase(),
+                          style: AppTypography.bodySmall.copyWith(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: isSelected ? Colors.white.withOpacity(0.8) : AppColors.textSecondary.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          date.day.toString(),
+                          style: AppTypography.titleMedium.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                        if (hasEvents && !isSelected) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                        if (isToday && !isSelected) ...[
+                           const SizedBox(height: 2),
+                           Text(
+                             'Hoy',
+                             style: TextStyle(
+                               color: AppColors.primary,
+                               fontSize: 8,
+                               fontWeight: FontWeight.w900,
+                             ),
+                           ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
             },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-                _selectedDate = DateTime(focusedDay.year, focusedDay.month, 1);
-              });
-            },
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            headerVisible: false,
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: AppTypography.bodySmall.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-              weekendStyle: AppTypography.bodySmall.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            calendarStyle: CalendarStyle(
-              markersMaxCount: 1,
-              markerDecoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              todayDecoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              outsideDaysVisible: false,
-              defaultTextStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-              todayTextStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
-              selectedTextStyle: AppTypography.bodyMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-              cellPadding: const EdgeInsets.only(bottom: 6),
-            ),
-            calendarBuilders: const CalendarBuilders(
-              markerBuilder: null,
-            ),
-            eventLoader: (day) => grouped[_normalizeDate(day)] ?? [],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+
 
   Widget _buildCalendarHeader(BuildContext context) {
     return Row(
@@ -202,190 +222,370 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                DateFormat('MMMM yyyy', 'es').format(_focusedDay),
-                style: AppTypography.titleLarge.copyWith(
-                  color: AppColors.textPrimary,
+                DateFormat('MMMM', 'es').format(_focusedDay).toUpperCase(),
+                style: AppTypography.bodySmall.copyWith(
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
               Text(
-                'Selecciona un día para ver tus citas',
-                style: AppTypography.bodySmall,
+                DateFormat('yyyy', 'es').format(_focusedDay),
+                style: AppTypography.h3.copyWith(
+                  height: 1.1,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
         ),
-        Row(
-          children: [
-            _buildChevronButton(Icons.chevron_left, () => _changeMonth(-1)),
-            const SizedBox(width: AppSpacing.sm),
-            _buildChevronButton(Icons.chevron_right, () => _changeMonth(1)),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
+          ),
+          child: Row(
+            children: [
+              _buildIconButton(Icons.calendar_month_rounded, () => _showFullCalendarPicker(context)),
+              const SizedBox(width: 4),
+              _buildIconButton(Icons.chevron_left_rounded, () => _changeMonth(-1)),
+              const SizedBox(width: 4),
+              _buildIconButton(Icons.chevron_right_rounded, () => _changeMonth(1)),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildScheduleSection(List<Appointment> appointments) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'Citas del ${DateFormat('EEEE, d', 'es').format(_selectedDate)}',
-                style: AppTypography.titleMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
+  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.textPrimary, size: 20),
+        ),
+      ),
+    );
+  }
+
+  void _showFullCalendarPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
             ),
-            if (appointments.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '${appointments.length} citas',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-          ],
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Seleccionar Fecha',
+                        style: AppTypography.h3.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TableCalendar(
+                        firstDay: DateTime.utc(2020, 1, 1),
+                        lastDay: DateTime.utc(2030, 12, 31),
+                        focusedDay: _focusedDay,
+                        locale: 'es_ES',
+                        selectedDayPredicate: (day) => _normalizeDate(day) == _normalizeDate(_selectedDate),
+                        onDaySelected: (selectedDay, focusedDay) {
+                          setModalState(() {
+                             _focusedDay = focusedDay;
+                          });
+                          setState(() {
+                            _selectedDate = selectedDay;
+                            _focusedDay = focusedDay;
+                          });
+                          Navigator.pop(context);
+                        },
+                        headerStyle: HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: true,
+                          titleTextStyle: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                          leftChevronIcon: const Icon(Icons.chevron_left_rounded, color: AppColors.primary),
+                          rightChevronIcon: const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+                        ),
+                        calendarStyle: CalendarStyle(
+                          todayDecoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          todayTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          selectedDecoration: const BoxDecoration(
+                            gradient: LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
+                            shape: BoxShape.circle,
+                          ),
+                          markerDecoration: const BoxDecoration(
+                            color: AppColors.primaryLight,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildScheduleHeader(int count) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        if (appointments.isEmpty)
+        const SizedBox(width: 12),
+        Text(
+          'Agenda para hoy',
+          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const Spacer(),
+        if (count > 0)
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.border),
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'No tienes citas agendadas para este día. Reserva en un negocio hoy mismo.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              '$count',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          )
-        else
-          Column(
-            children: appointments
-                .map(
-                  (appointment) => Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Center(
-                            child: Text(
-                              DateFormat('HH:mm').format(appointment.dateTime),
-                              textAlign: TextAlign.center,
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                appointment.businessName,
-                                style: AppTypography.titleMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                appointment.serviceNames.join(', '),
-                                style: AppTypography.bodySmall,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Con: ${appointment.professionalName}',
-                                style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _buildStatusBadge(appointment.status),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
           ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary.withOpacity(0.3), size: 48),
+          const SizedBox(height: 16),
+          Text(
+            'Sin citas para este día',
+            style: AppTypography.titleMedium.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '¿Por qué no agendas algo nuevo hoy?',
+            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary.withOpacity(0.7)),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(appointment.dateTime),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  'AM',
+                  style: AppTypography.bodySmall.copyWith(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appointment.businessName,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.bolt, size: 12, color: AppColors.primaryLight),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        appointment.serviceNames.join(', '),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.person_pin_circle_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      appointment.professionalName,
+                      style: AppTypography.bodySmall.copyWith(
+                        fontSize: 10,
+                        color: AppColors.textSecondary.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _buildStatusBadge(appointment.status),
+        ],
+      ),
     );
   }
 
   Widget _buildStatusBadge(String status) {
     Color color;
     String text;
+    IconData icon;
+    
     switch (status) {
       case 'confirmed':
         color = const Color(0xFF10B981);
         text = 'Confirmada';
+        icon = Icons.check_circle_outline;
         break;
       case 'cancelled':
         color = const Color(0xFFEF4444);
         text = 'Cancelada';
+        icon = Icons.cancel_outlined;
         break;
       case 'completed':
-        color = Colors.blue;
-        text = 'Completada';
+        color = AppColors.primary;
+        text = 'Finalizada';
+        icon = Icons.done_all_rounded;
         break;
       default:
         color = const Color(0xFFF97316);
         text = 'Pendiente';
+        icon = Icons.access_time_rounded;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 16),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     );
   }
 }

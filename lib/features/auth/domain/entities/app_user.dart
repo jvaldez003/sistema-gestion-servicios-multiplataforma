@@ -4,6 +4,8 @@ class AppUser {
   final String? name;
   final String? phoneNumber;
   final String? photoUrl;
+  final int points;
+  final List<String> favoriteIds;
 
   const AppUser({
     required this.id,
@@ -11,5 +13,7 @@ class AppUser {
     this.name,
     this.phoneNumber,
     this.photoUrl,
+    this.points = 0,
+    this.favoriteIds = const [],
   });
 }

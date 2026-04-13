@@ -6,7 +6,13 @@ import '../widgets/content_stepper.dart';
 
 class NewServiceFlow extends ConsumerStatefulWidget {
   final String businessId;
-  const NewServiceFlow({super.key, required this.businessId});
+  final Map<String, dynamic>? existingService;
+
+  const NewServiceFlow({
+    super.key, 
+    required this.businessId,
+    this.existingService,
+  });
 
   @override
   ConsumerState<NewServiceFlow> createState() => _NewServiceFlowState();
@@ -16,11 +22,20 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
   int _currentStep = 1;
   final int _totalSteps = 2;
 
-  final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _durationController = TextEditingController(text: '30 min');
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _durationController;
 
   bool _isPublishing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.existingService;
+    _nameController = TextEditingController(text: s?['name'] ?? '');
+    _priceController = TextEditingController(text: s?['price']?.toString() ?? '');
+    _durationController = TextEditingController(text: s?['duration'] ?? '30 min');
+  }
 
   @override
   void dispose() {
@@ -57,24 +72,32 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
     setState(() => _isPublishing = true);
     try {
       final repo = ref.read(businessRepositoryProvider);
+      final isUpdating = widget.existingService != null;
 
-      await repo.addService(widget.businessId, {
+      final serviceData = {
         'name': _nameController.text,
         'price': _priceController.text,
         'duration': _durationController.text,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      if (isUpdating) {
+        await repo.updateService(widget.businessId, widget.existingService!['id'], serviceData);
+      } else {
+        serviceData['createdAt'] = DateTime.now().toIso8601String();
+        await repo.addService(widget.businessId, serviceData);
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Servicio agregado con éxito!')),
+          SnackBar(content: Text(isUpdating ? '¡Servicio actualizado!' : '¡Servicio agregado con éxito!')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar servicio: $e')),
+          SnackBar(content: Text('Error al procesar servicio: $e')),
         );
       }
     } finally {
@@ -84,15 +107,18 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final isUpdating = widget.existingService != null;
     return ContentStepper(
-      title: 'Nuevo servicio',
+      title: isUpdating ? 'Editar servicio' : 'Nuevo servicio',
       currentStep: _currentStep,
       totalSteps: _totalSteps,
       themeColor: AppColors.primary,
       onNext: _nextStep,
       onBack: _previousStep,
       nextButtonText:
-          _currentStep == _totalSteps ? 'Agregar servicio' : 'Continuar',
+          _currentStep == _totalSteps 
+            ? (isUpdating ? 'Guardar cambios' : 'Agregar servicio') 
+            : 'Continuar',
       steps: [
         _buildInfoStep(),
         _buildPreviewStep(),
