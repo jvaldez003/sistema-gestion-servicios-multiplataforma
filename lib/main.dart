@@ -10,6 +10,8 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/providers/auth_notifier.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 
+import 'core/navigation/router.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es', null);
@@ -28,9 +30,9 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authStatus = ref.watch(authNotifierProvider).status;
+    final router = ref.watch(routerProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'FlowServ',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -38,9 +40,7 @@ class MyApp extends ConsumerWidget {
         textTheme: AppTypography.textTheme,
         useMaterial3: true,
       ),
-      home: authStatus == AuthStatus.authenticated
-          ? const HomeScreen()
-          : const LoginScreen(),
+      routerConfig: router,
     );
   }
 }

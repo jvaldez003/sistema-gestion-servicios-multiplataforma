@@ -8,6 +8,7 @@ import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typogra
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_post_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_product_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_service_flow.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/team_management_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
@@ -547,9 +548,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         final service = services[index];
                         return _buildServiceItem(
-                            service['name'] ?? '',
-                            service['price']?.toString() ?? '',
-                            service['duration'] ?? '',
+                            service.name,
+                            service.price.toString(),
+                            service.duration,
                             Icons.cut_outlined);
                       },
                     );

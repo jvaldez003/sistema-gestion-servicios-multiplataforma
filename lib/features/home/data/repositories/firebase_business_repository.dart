@@ -312,13 +312,24 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .doc(businessId)
         .collection('workRequests')
         .where('status', isEqualTo: 'pending')
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              final data = doc.data();
-              data['id'] = doc.id;
-              return data;
-            }).toList());
+        .map((snapshot) {
+      final requests = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+
+      // Sort in memory to avoid Firestore index requirement
+      requests.sort((a, b) {
+        final aTime = a['createdAt'] as Timestamp?;
+        final bTime = b['createdAt'] as Timestamp?;
+        if (aTime == null || bTime == null) return 0;
+        return bTime.compareTo(aTime);
+      });
+
+      return requests;
+    });
   }
 
   @override
@@ -375,6 +386,30 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .collection('workRequests')
         .doc(requestId)
         .update({'status': 'rejected'});
+  }
+
+  @override
+  Stream<bool> isMember(String businessId, String userId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('team')
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: 'active')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.isNotEmpty);
+  }
+
+  @override
+  Stream<bool> hasPendingRequest(String businessId, String userId) {
+    return _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('workRequests')
+        .where('requesterId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.isNotEmpty);
   }
 }
 

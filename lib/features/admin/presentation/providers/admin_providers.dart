@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/business.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/auth/presentation/providers/auth_notifier.dart';
 
@@ -13,14 +14,15 @@ final adminBusinessProvider = FutureProvider<Business?>((ref) async {
   return await repository.getBusinessByOwnerId(userId);
 });
 
-final adminServicesProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+final adminServicesProvider = StreamProvider<List<Service>>((ref) {
   final repository = ref.watch(businessRepositoryProvider);
   final businessAsync = ref.watch(adminBusinessProvider);
 
   return businessAsync.when(
     data: (business) {
       if (business == null) return Stream.value([]);
-      return repository.getServicesStream(business.id);
+      return repository.getServicesStream(business.id).map((list) =>
+          list.map((map) => Service.fromMap(map, map['id'] ?? '')).toList());
     },
     loading: () => Stream.value([]),
     error: (err, stack) => Stream.value([]),

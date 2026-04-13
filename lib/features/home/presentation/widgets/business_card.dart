@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -13,14 +15,7 @@ class BusinessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BusinessProfileScreen(business: business),
-          ),
-        );
-      },
+      onTap: () => context.push('/business/${business.id}', extra: business),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.xl),
         decoration: BoxDecoration(
@@ -44,7 +39,19 @@ class BusinessCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundImage: NetworkImage(business.avatarUrl),
+                    backgroundImage: business.avatarUrl.isNotEmpty
+                        ? CachedNetworkImageProvider(business.avatarUrl)
+                        : null,
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    child: business.avatarUrl.isEmpty
+                        ? Text(
+                            business.name.substring(0, 1).toUpperCase(),
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -142,14 +149,28 @@ class BusinessCard extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),
-                    child: Image.network(
-                      business.galleryImages.isNotEmpty
+                    child: CachedNetworkImage(
+                      imageUrl: business.galleryImages.isNotEmpty
                           ? business.galleryImages.first
                           : business.imageUrl,
                       height: 200,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      placeholder: (context, url) => Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
                         height: 200,
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -362,7 +383,7 @@ class BusinessCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => context.push('/business/${business.id}/booking', extra: business),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

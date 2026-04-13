@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import '../../domain/models/business.dart';
 import '../providers/business_details_providers.dart';
 import '../providers/business_providers.dart';
@@ -107,7 +110,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                             backgroundColor: AppColors.primary,
                             backgroundImage:
                                 widget.business.avatarUrl.isNotEmpty
-                                    ? NetworkImage(widget.business.avatarUrl)
+                                    ? CachedNetworkImageProvider(widget.business.avatarUrl)
                                     : null,
                             child: widget.business.avatarUrl.isEmpty
                                 ? Text(
@@ -186,7 +189,9 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                           ),
                           const SizedBox(width: 10),
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              context.push('/business/${widget.business.id}/booking', extra: widget.business);
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFF97316),
                               foregroundColor: Colors.white,
@@ -197,47 +202,67 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                             child: const Text('Reservar'),
                           ),
                           const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final user = authState.value;
-                              if (user == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Debes iniciar sesión para solicitar trabajo')),
-                                );
-                                return;
+                          Consumer(
+                            builder: (context, ref, child) {
+                              final status = ref.watch(userMembershipStatusProvider(businessId));
+                              
+                              String label = 'Solicitar Trabajo';
+                              bool isDisabled = false;
+                              Color buttonColor = Colors.grey[600]!;
+
+                              if (status == MembershipStatus.accepted) {
+                                label = 'Miembro del equipo';
+                                isDisabled = true;
+                                buttonColor = const Color(0xFF10B981); // Green
+                              } else if (status == MembershipStatus.pending) {
+                                label = 'Solicitud enviada';
+                                isDisabled = true;
+                                buttonColor = const Color(0xFFF59E0B); // Amber
                               }
-                              try {
-                                await ref
-                                    .read(businessRepositoryProvider)
-                                    .sendWorkRequest(
-                                      businessId,
-                                      user.id,
-                                      user.name ?? 'Usuario',
-                                      user.photoUrl ?? '',
+
+                              return ElevatedButton(
+                                onPressed: isDisabled ? null : () async {
+                                  final user = authState.value;
+                                  if (user == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Debes iniciar sesión para solicitar trabajo')),
                                     );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          '¡Solicitud enviada correctamente!')),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          'Error al enviar solicitud: $e')),
-                                );
-                              }
+                                    return;
+                                  }
+                                  try {
+                                    await ref
+                                        .read(businessRepositoryProvider)
+                                        .sendWorkRequest(
+                                          businessId,
+                                          user.id,
+                                          user.name ?? 'Usuario',
+                                          user.photoUrl ?? '',
+                                        );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              '¡Solicitud enviada correctamente!')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Error al enviar solicitud: $e')),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: buttonColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
+                                child: Text(label),
+                              );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[600],
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                            child: const Text('Solicitar Trabajo'),
                           ),
                         ],
                       ),
@@ -258,8 +283,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                         '@${widget.business.name.toLowerCase().replaceAll(' ', '')}',
                         style: AppTypography.bodySmall,
                       ),
-                      const SizedBox(width: 8),
-                      Text('•  ${widget.business.category}  •  Bogotá',
+                      Text('•  ${widget.business.category}',
                           style: AppTypography.bodySmall),
                     ],
                   ),
@@ -384,7 +408,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
   }
 
   Widget _buildServicesTab(
-      AsyncValue<List<Map<String, dynamic>>> servicesAsync) {
+      AsyncValue<List<Service>> servicesAsync) {
     return servicesAsync.when(
       data: (services) {
         if (services.isEmpty) {
@@ -396,10 +420,10 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
           itemBuilder: (context, index) {
             final service = services[index];
             return ListTile(
-              title: Text(service['name'] ?? ''),
-              subtitle: Text(service['duration'] ?? ''),
+              title: Text(service.name),
+              subtitle: Text(service.duration),
               trailing: Text(
-                '\$${service['price']}',
+                '\$${service.price}',
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -486,7 +510,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
           const Text('Ubicación',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          const Text('Bogotá, Colombia'),
+          const Text('Ubicación no especificada'),
           const SizedBox(height: 32),
           const Text('Nuestro Equipo',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -537,16 +561,18 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
     final hasImage = widget.business.imageUrl.isNotEmpty;
 
     if (hasGallery) {
-      return Image.network(
-        widget.business.galleryImages.first,
+      return CachedNetworkImage(
+        imageUrl: widget.business.galleryImages.first,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+        placeholder: (context, url) => _buildImagePlaceholder(),
+        errorWidget: (context, url, error) => _buildImagePlaceholder(),
       );
     } else if (hasImage) {
-      return Image.network(
-        widget.business.imageUrl,
+      return CachedNetworkImage(
+        imageUrl: widget.business.imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+        placeholder: (context, url) => _buildImagePlaceholder(),
+        errorWidget: (context, url, error) => _buildImagePlaceholder(),
       );
     }
     return _buildImagePlaceholder();
@@ -633,7 +659,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                   radius: 18,
                   backgroundColor: AppColors.primary,
                   backgroundImage: widget.business.avatarUrl.isNotEmpty
-                      ? NetworkImage(widget.business.avatarUrl)
+                      ? CachedNetworkImageProvider(widget.business.avatarUrl)
                       : null,
                   child: widget.business.avatarUrl.isEmpty
                       ? Text(widget.business.name.substring(0, 1).toUpperCase(),
@@ -662,12 +688,17 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(20)),
-              child: Image.network(
-                post['imageUrl'],
+              child: CachedNetworkImage(
+                imageUrl: post['imageUrl'],
                 height: 250,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                placeholder: (context, url) => Container(
+                  height: 250,
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (context, url, error) => Container(
                   height: 250,
                   color: Colors.grey[200],
                   child: const Icon(Icons.image_not_supported),

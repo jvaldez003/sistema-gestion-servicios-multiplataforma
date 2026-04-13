@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import '../widgets/content_stepper.dart';
 
 class NewPostFlow extends ConsumerStatefulWidget {
@@ -212,7 +213,7 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   }
 
   Widget _buildDetailsStep(
-      AsyncValue<List<Map<String, dynamic>>> servicesAsync) {
+      AsyncValue<List<Service>> servicesAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -225,12 +226,12 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
           data: (services) => Wrap(
             spacing: 8,
             children: services.map((s) {
-              final isSelected = _selectedServiceId == s['id'];
+              final isSelected = _selectedServiceId == s.id;
               return ChoiceChip(
-                label: Text(s['name'] ?? ''),
+                label: Text(s.name),
                 selected: isSelected,
                 onSelected: (val) {
-                  setState(() => _selectedServiceId = val ? s['id'] : null);
+                  setState(() => _selectedServiceId = val ? s.id : null);
                 },
                 selectedColor: const Color(0xFFF3E8FF),
                 labelStyle: TextStyle(
@@ -278,10 +279,10 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   }
 
   Widget _buildPreviewStep(
-      AsyncValue<List<Map<String, dynamic>>> servicesAsync) {
-    final selectedService = servicesAsync.value?.firstWhere(
-      (s) => s['id'] == _selectedServiceId,
-      orElse: () => {},
+      AsyncValue<List<Service>> servicesAsync) {
+    final selectedService = servicesAsync.value?.cast<Service?>().firstWhere(
+      (s) => s?.id == _selectedServiceId,
+      orElse: () => null,
     );
 
     return Column(
@@ -297,7 +298,7 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
             const Icon(Icons.cut, color: Color(0xFFF97316), size: 24),
             const SizedBox(width: 12),
             Text(
-              selectedService?['name'] ?? 'Sin servicio relacionado',
+              selectedService?.name ?? 'Sin servicio relacionado',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],

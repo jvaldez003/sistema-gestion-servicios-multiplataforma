@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 
 class ManageServicesScreen extends ConsumerWidget {
@@ -60,8 +61,8 @@ class ManageServicesScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.cut_outlined, color: Color(0xFF3B82F6)),
                   ),
-                  title: Text(
-                    service['name'] ?? 'Servicio nuevo',
+                   title: Text(
+                    service.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Column(
@@ -69,20 +70,20 @@ class ManageServicesScreen extends ConsumerWidget {
                     children: [
                       const SizedBox(height: 4),
                       Text(
-                        '\$${service['price']}',
+                        '\$${service.price}',
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text('${service['duration'] ?? 'N/A'} min', style: const TextStyle(fontSize: 12)),
+                      Text(service.duration, style: const TextStyle(fontSize: 12)),
                     ],
                   ),
                   trailing: IconButton(
                     icon:
                         const Icon(Icons.delete_outline, color: Colors.redAccent),
                     onPressed: () {
-                      _confirmDelete(context, ref, service['id'], service['name']);
+                      _confirmDelete(context, ref, service.id, service.name);
                     },
                   ),
                 ),

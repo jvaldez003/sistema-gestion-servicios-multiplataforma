@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const ExplorarTab(),
           const AppointmentsTab(),
-          const PlaceholderWidget(title: 'Puntos'),
+          const Center(child: Text('Próximamente: Sistema de Puntos')),
           const ProfileTab(),
         ],
       ),
@@ -106,11 +106,8 @@ class ExplorarTab extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_outlined,
-                              color: Color(0xFFF97316), size: 14),
-                          const SizedBox(width: 4),
                           Text(
-                            'Bogotá, Colombia',
+                            'Ubicación no detectada',
                             style: AppTypography.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -148,61 +145,7 @@ class ExplorarTab extends ConsumerWidget {
           ),
 
           // Trends
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.trending_up,
-                          color: Color(0xFFF97316), size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Tendencias hoy',
-                        style: AppTypography.titleMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        '#FadeCorte',
-                        '#SpaDay',
-                        '#ManiPedi',
-                        '#LavadoPremium',
-                      ]
-                          .map((tag) => Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                      color:
-                                          AppColors.primary.withOpacity(0.1)),
-                                ),
-                                child: Text(
-                                  tag,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox.shrink()),
 
           const SliverToBoxAdapter(
             child: SizedBox(height: AppSpacing.xl),

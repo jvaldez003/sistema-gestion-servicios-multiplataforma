@@ -1,43 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../domain/models/appointment.dart';
+import '../providers/booking_providers.dart';
 
-class AppointmentsTab extends StatefulWidget {
+class AppointmentsTab extends ConsumerStatefulWidget {
   const AppointmentsTab({super.key});
 
   @override
-  State<AppointmentsTab> createState() => _AppointmentsTabState();
+  ConsumerState<AppointmentsTab> createState() => _AppointmentsTabState();
 }
 
-class _AppointmentsTabState extends State<AppointmentsTab> {
+class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDate = DateTime.now();
-
-  // El calendario es de solo lectura. Las citas deben venir de datos reales,
-  // no se generan ni se crean aquí en el widget.
-  final Map<DateTime, List<Appointment>> _appointments = {};
-
-  // Devuelve las citas que corresponden a la fecha actualmente seleccionada.
-  List<Appointment> get _selectedAppointments {
-    return _appointments[_normalizeDate(_selectedDate)] ?? [];
-  }
-
-  // TableCalendar usa este cargador de eventos para marcar fechas con citas.
-  List<Appointment> _getEventsForDay(DateTime day) {
-    return _appointments[_normalizeDate(day)] ?? [];
-  }
 
   DateTime _normalizeDate(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
 
+  Map<DateTime, List<Appointment>> _groupAppointments(List<Appointment> appointments) {
+    final Map<DateTime, List<Appointment>> grouped = {};
+    for (var appt in appointments) {
+      final date = _normalizeDate(appt.dateTime);
+      if (grouped[date] == null) grouped[date] = [];
+      grouped[date]!.add(appt);
+    }
+    return grouped;
+  }
+
   void _changeMonth(int offset) {
     setState(() {
-      // Cambia el mes mostrado en el calendario cuando el usuario toca los chevrons.
       _focusedDay = DateTime(
         _focusedDay.year,
         _focusedDay.month + offset,
@@ -48,7 +46,6 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
   }
 
   Widget _buildChevronButton(IconData icon, VoidCallback onTap) {
-    // Botón de navegación para mover el calendario un mes atrás o adelante.
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -56,7 +53,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.12),
+          color: AppColors.primary.withOpacity(0.12),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Icon(icon, color: AppColors.primary, size: 22),
@@ -66,40 +63,49 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    // Construye la pestaña completa de Mis Citas,
-    // incluyendo el calendario y el listado de citas del día seleccionado.
+    final appointmentsAsync = ref.watch(userAppointmentsProvider);
+
     return SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Mis Citas',
-                    style: AppTypography.h2,
+      child: appointmentsAsync.when(
+        data: (appointments) {
+          final groupedAppointments = _groupAppointments(appointments);
+          final selectedAppointments = groupedAppointments[_normalizeDate(_selectedDate)] ?? [];
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mis Citas',
+                        style: AppTypography.h2,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Revisa tu agenda y tus próximas reservas',
+                        style: AppTypography.bodyMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildCalendarCard(context, groupedAppointments),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildScheduleSection(selectedAppointments),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Revisa tu agenda y tus próximas reservas',
-                    style: AppTypography.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  _buildCalendarCard(context),
-                  const SizedBox(height: AppSpacing.xl),
-                  _buildScheduleSection(),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, __) => Center(child: Text('Error: $err')),
       ),
     );
   }
 
-  Widget _buildCalendarCard(BuildContext context) {
+  Widget _buildCalendarCard(BuildContext context, Map<DateTime, List<Appointment>> grouped) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -108,7 +114,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -149,16 +155,18 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
             ),
             calendarStyle: CalendarStyle(
               markersMaxCount: 1,
-              markerDecoration: BoxDecoration(
+              markerDecoration: const BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
               selectedDecoration: BoxDecoration(
                 color: AppColors.primary,
+                shape: BoxShape.rectangle, // FIXED: Explicit shape to allow borderRadius
                 borderRadius: BorderRadius.circular(16),
               ),
               todayDecoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
+                color: AppColors.primary.withOpacity(0.12),
+                shape: BoxShape.rectangle, // FIXED: Explicit shape to allow borderRadius
                 borderRadius: BorderRadius.circular(16),
               ),
               outsideDaysVisible: false,
@@ -184,7 +192,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                   child: Container(
                     width: 6,
                     height: 6,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -192,7 +200,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                 );
               },
             ),
-            eventLoader: _getEventsForDay,
+            eventLoader: (day) => grouped[_normalizeDate(day)] ?? [],
           ),
         ],
       ),
@@ -231,9 +239,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
     );
   }
 
-  Widget _buildScheduleSection() {
-    final appointments = _selectedAppointments;
-    // Muestra la sección de horario y detalles de las citas para el día seleccionado.
+  Widget _buildScheduleSection(List<Appointment> appointments) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -251,7 +257,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: AppColors.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
@@ -294,7 +300,7 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: Colors.black.withOpacity(0.03),
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
@@ -306,12 +312,12 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                           width: 54,
                           height: 54,
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
+                            color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Center(
                             child: Text(
-                              appointment.time,
+                              DateFormat('HH:mm').format(appointment.dateTime),
                               textAlign: TextAlign.center,
                               style: AppTypography.bodySmall.copyWith(
                                 color: AppColors.primary,
@@ -326,23 +332,25 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                appointment.service,
+                                appointment.businessName,
                                 style: AppTypography.titleMedium.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
-                                appointment.location,
+                                appointment.serviceNames.join(', '),
                                 style: AppTypography.bodySmall,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Con: ${appointment.professionalName}',
+                                style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, fontSize: 10),
                               ),
                             ],
                           ),
                         ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: AppColors.textSecondary,
-                        ),
+                        _buildStatusBadge(appointment.status),
                       ],
                     ),
                   ),
@@ -352,16 +360,42 @@ class _AppointmentsTabState extends State<AppointmentsTab> {
       ],
     );
   }
-}
 
-class Appointment {
-  final String time;
-  final String service;
-  final String location;
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    String text;
+    switch (status) {
+      case 'confirmed':
+        color = const Color(0xFF10B981);
+        text = 'Confirmada';
+        break;
+      case 'cancelled':
+        color = const Color(0xFFEF4444);
+        text = 'Cancelada';
+        break;
+      case 'completed':
+        color = Colors.blue;
+        text = 'Completada';
+        break;
+      default:
+        color = const Color(0xFFF97316);
+        text = 'Pendiente';
+    }
 
-  Appointment({
-    required this.time,
-    required this.service,
-    required this.location,
-  });
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 }

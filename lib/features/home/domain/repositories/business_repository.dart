@@ -26,4 +26,6 @@ abstract class BusinessRepository {
   Stream<List<Map<String, dynamic>>> getWorkRequestsStream(String businessId);
   Future<void> acceptWorkRequest(String businessId, String requestId);
   Future<void> rejectWorkRequest(String businessId, String requestId);
+  Stream<bool> isMember(String businessId, String userId);
+  Stream<bool> hasPendingRequest(String businessId, String userId);
 }

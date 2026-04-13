@@ -50,7 +50,7 @@ class ProfileTab extends ConsumerWidget {
           // Favoritos Section Header
           SliverToBoxAdapter(
             child: _buildSectionHeader(
-                context, 'Favoritos', '3 negocios', Icons.favorite,
+                context, 'Favoritos', '', Icons.favorite,
                 color: AppColors.error),
           ),
 
@@ -72,7 +72,7 @@ class ProfileTab extends ConsumerWidget {
                 context,
                 icon: Icons.person_outline,
                 title: 'Datos personales',
-                subtitle: user?.name ?? 'María González',
+                subtitle: user?.name ?? 'Nombre no configurado',
               ),
               _buildMenuItem(
                 context,
@@ -143,13 +143,13 @@ class ProfileTab extends ConsumerWidget {
                 context,
                 icon: Icons.favorite_border,
                 title: 'Negocios favoritos',
-                subtitle: '3 guardados',
+                subtitle: 'Ver mis favoritos',
               ),
               _buildMenuItem(
                 context,
                 icon: Icons.business_center_outlined,
                 title: 'Mis postulaciones',
-                subtitle: '1 enviadas',
+                subtitle: 'Ver mis solicitudes',
               ),
               _buildMenuItem(
                 context,
@@ -373,31 +373,20 @@ class ProfileTab extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.name ?? 'María González',
+                  user?.name ?? 'Usuario',
                   style: AppTypography.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  user?.email ?? 'maria@email.com',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined,
-                        color: AppColors.textSecondary, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Bogotá',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                if (user?.email != null)
+                  Text(
+                    user!.email!,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                  ],
-                ),
+                  ),
+                const SizedBox(height: 8),
+                const SizedBox.shrink(),
               ],
             ),
           ),
