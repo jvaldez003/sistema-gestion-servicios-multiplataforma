@@ -19,4 +19,11 @@ abstract class BusinessRepository {
   Future<void> deleteService(String businessId, String serviceId);
   Future<void> deleteProduct(String businessId, String productId);
   Future<void> deletePost(String businessId, String postId);
+
+  // Work Request methods
+  Future<void> sendWorkRequest(
+      String businessId, String requesterId, String requesterName, String requesterAvatar);
+  Stream<List<Map<String, dynamic>>> getWorkRequestsStream(String businessId);
+  Future<void> acceptWorkRequest(String businessId, String requestId);
+  Future<void> rejectWorkRequest(String businessId, String requestId);
 }
