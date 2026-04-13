@@ -7,6 +7,7 @@ import '../../domain/models/business.dart';
 import '../providers/business_details_providers.dart';
 import '../providers/business_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import 'booking_screen.dart';
 
 class BusinessProfileScreen extends ConsumerStatefulWidget {
   final Business business;
@@ -135,69 +136,78 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                           ),
                         ],
                       ),
-                       Row(
-                        children: [
-                          isFollowingAsync.when(
-                            data: (isFollowing) => ElevatedButton(
-                              onPressed: () async {
-                                final user = authState.value;
-                                if (user == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Debes iniciar sesión para seguir negocios')),
-                                  );
-                                  return;
-                                }
-                                try {
-                                  await ref
-                                      .read(businessRepositoryProvider)
-                                      .toggleFollowBusiness(
-                                          businessId, user.id);
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Error al actualizar seguimiento: $e')),
-                                  );
-                                }
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            isFollowingAsync.when(
+                              data: (isFollowing) => ElevatedButton(
+                                onPressed: () async {
+                                  final user = authState.value;
+                                  if (user == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Debes iniciar sesión para seguir negocios')),
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    await ref
+                                        .read(businessRepositoryProvider)
+                                        .toggleFollowBusiness(
+                                            businessId, user.id);
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Error al actualizar seguimiento: $e')),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isFollowing
+                                      ? Colors.white
+                                      : AppColors.primary,
+                                  foregroundColor: isFollowing
+                                      ? AppColors.primary
+                                      : Colors.white,
+                                  side: isFollowing
+                                      ? const BorderSide(
+                                          color: AppColors.primary)
+                                      : null,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
+                                child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
+                              ),
+                              loading: () => const ElevatedButton(
+                                  onPressed: null, child: Text('...')),
+                              error: (_, __) => const ElevatedButton(
+                                  onPressed: null, child: Text('Error')),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => BookingScreen(business: widget.business),
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isFollowing
-                                    ? Colors.white
-                                    : AppColors.primary,
-                                foregroundColor: isFollowing
-                                    ? AppColors.primary
-                                    : Colors.white,
-                                side: isFollowing
-                                    ? const BorderSide(
-                                        color: AppColors.primary)
-                                    : null,
+                                backgroundColor: const Color(0xFFF97316),
+                                foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12)),
                                 elevation: 0,
                               ),
-                              child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
+                              child: const Text('Reservar'),
                             ),
-                            loading: () => const ElevatedButton(
-                                onPressed: null, child: Text('...')),
-                            error: (_, __) => const ElevatedButton(
-                                onPressed: null, child: Text('Error')),
-                          ),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF97316),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                            child: const Text('Reservar'),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
