@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
 import '../screens/business_profile_screen.dart';
+import '../screens/booking_screen.dart';
 
 class BusinessCard extends StatelessWidget {
   final Business business;
@@ -208,24 +209,26 @@ class BusinessCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Desde',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: Colors.white,
-                                fontSize: 11,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Desde',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
                               ),
-                            ),
-                            Text(
-                              '\$${business.startingPrice.toStringAsFixed(0)}',
-                              style: AppTypography.h3.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                              Text(
+                                '\$${business.startingPrice.toStringAsFixed(0)}',
+                                style: AppTypography.h3.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(

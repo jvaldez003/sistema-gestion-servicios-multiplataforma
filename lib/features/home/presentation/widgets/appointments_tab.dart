@@ -124,7 +124,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         children: [
           _buildCalendarHeader(context),
           const SizedBox(height: AppSpacing.md),
-          TableCalendar<Appointment>(
+          TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
@@ -161,12 +161,12 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               ),
               selectedDecoration: BoxDecoration(
                 color: AppColors.primary,
-                shape: BoxShape.rectangle, // FIXED: Explicit shape to allow borderRadius
+                shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(16),
               ),
               todayDecoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.12),
-                shape: BoxShape.rectangle, // FIXED: Explicit shape to allow borderRadius
+                shape: BoxShape.rectangle,
                 borderRadius: BorderRadius.circular(16),
               ),
               outsideDaysVisible: false,
@@ -184,21 +184,8 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               ),
               cellPadding: const EdgeInsets.only(bottom: 6),
             ),
-            calendarBuilders: CalendarBuilders<Appointment>(
-              markerBuilder: (context, date, events) {
-                if (events.isEmpty) return const SizedBox.shrink();
-                return Positioned(
-                  bottom: 6,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                );
-              },
+            calendarBuilders: const CalendarBuilders(
+              markerBuilder: null,
             ),
             eventLoader: (day) => grouped[_normalizeDate(day)] ?? [],
           ),
@@ -246,9 +233,12 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Citas del ${DateFormat('EEEE, d', 'es').format(_selectedDate)}',
-              style: AppTypography.titleMedium,
+            Expanded(
+              child: Text(
+                'Citas del ${DateFormat('EEEE, d', 'es').format(_selectedDate)}',
+                style: AppTypography.titleMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (appointments.isNotEmpty)
               Container(
@@ -281,7 +271,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               border: Border.all(color: AppColors.border),
             ),
             child: Text(
-              'No tienes citas agendadas para este día. Selecciona otra fecha en el calendario.',
+              'No tienes citas agendadas para este día. Reserva en un negocio hoy mismo.',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
