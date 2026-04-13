@@ -6,7 +6,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
 import '../screens/business_profile_screen.dart';
-import '../screens/booking_screen.dart';
 
 class BusinessCard extends StatelessWidget {
   final Business business;

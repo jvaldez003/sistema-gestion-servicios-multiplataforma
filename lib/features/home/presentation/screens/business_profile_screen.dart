@@ -10,7 +10,6 @@ import '../../domain/models/business.dart';
 import '../providers/business_details_providers.dart';
 import '../providers/business_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import 'booking_screen.dart';
 
 class BusinessProfileScreen extends ConsumerStatefulWidget {
   final Business business;
