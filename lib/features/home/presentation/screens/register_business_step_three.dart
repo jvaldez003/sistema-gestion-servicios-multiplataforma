@@ -4,7 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/business_registration_provider.dart';
-import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
+import 'home_screen.dart';
 
 class RegisterBusinessStepThree extends ConsumerStatefulWidget {
   const RegisterBusinessStepThree({super.key});
@@ -207,10 +207,10 @@ class _RegisterBusinessStepThreeState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Negocio registrado con éxito!')),
           );
-          // Navigate to Admin Dashboard and remove all previous routes
+          // Navigate to Home Screen and remove all previous routes
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-                builder: (context) => const AdminDashboardScreen()),
+                builder: (context) => const HomeScreen()),
             (route) => false,
           );
         }
