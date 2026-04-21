@@ -78,7 +78,7 @@ class _CategorySelectorState extends State<CategorySelector> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? category.color
-                        : category.color.withOpacity(0.15),
+                        : category.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: isSelected
                         ? Border.all(color: category.color, width: 2)
@@ -107,3 +107,4 @@ class _CategorySelectorState extends State<CategorySelector> {
     );
   }
 }
+

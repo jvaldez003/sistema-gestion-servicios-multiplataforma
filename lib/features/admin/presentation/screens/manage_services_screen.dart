@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
-import 'new_service_flow.dart';
 
 class ManageServicesScreen extends ConsumerWidget {
   final String businessId;
@@ -80,23 +78,12 @@ class ManageServicesScreen extends ConsumerWidget {
                       Text(service.duration, style: const TextStyle(fontSize: 12)),
                     ],
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
-                        onPressed: () {
-                          _editService(context, service);
-                        },
-                      ),
-                      IconButton(
-                        icon:
-                            const Icon(Icons.delete_outline, color: Colors.redAccent),
-                        onPressed: () {
-                          _confirmDelete(context, ref, service.id, service.name);
-                        },
-                      ),
-                    ],
+                  trailing: IconButton(
+                    icon:
+                        const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () {
+                      _confirmDelete(context, ref, service.id, service.name);
+                    },
                   ),
                 ),
               );
@@ -105,21 +92,6 @@ class ManageServicesScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
-      ),
-    );
-  }
-
-  void _editService(BuildContext context, Service service) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => NewServiceFlow(
-        businessId: businessId,
-        existingService: {
-          ...service.toMap(),
-          'id': service.id,
-        },
       ),
     );
   }

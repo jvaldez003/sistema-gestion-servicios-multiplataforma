@@ -164,3 +164,4 @@ class ManageProductsScreen extends ConsumerWidget {
     }
   }
 }
+

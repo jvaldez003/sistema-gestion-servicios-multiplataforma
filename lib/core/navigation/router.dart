@@ -45,9 +45,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'booking',
             builder: (context, state) {
-              final id = state.pathParameters['id']!;
               final business = state.extra as Business?;
-              return BookingFlowScreen(business: business, businessId: id);
+              return BookingFlowScreen(business: business ?? Business(id: state.pathParameters['id']!, name: '', category: '', description: '', imageUrl: '', avatarUrl: '', rating: 0.0, totalReviews: 0, distance: 0.0, isVerified: false, isTop: false, startingPrice: 0.0, tags: [], likes: 0, comments: 0, professionalCount: 0));
             },
           ),
         ],

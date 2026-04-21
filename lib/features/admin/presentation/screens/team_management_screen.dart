@@ -76,7 +76,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.arrow_back,
@@ -127,7 +127,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 4)
                         ],
                       ),
@@ -435,7 +435,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Stack(
@@ -451,7 +451,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           fontSize: 20)),
                   Text(label,
                       style: TextStyle(
-                          color: textColor.withOpacity(0.8), fontSize: 11)),
+                          color: textColor.withValues(alpha: 0.8), fontSize: 11)),
                 ],
               ),
             ),
@@ -784,4 +784,5 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
     );
   }
 }
+
 

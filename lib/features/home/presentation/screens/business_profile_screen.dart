@@ -78,7 +78,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: CircleAvatar(
-                    backgroundColor: Colors.black.withOpacity(0.3),
+                    backgroundColor: Colors.black.withValues(alpha: 0.3),
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back,
                           color: Colors.white, size: 20),
@@ -88,7 +88,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                 ),
                 actions: [
                   CircleAvatar(
-                    backgroundColor: Colors.black.withOpacity(0.3),
+                    backgroundColor: Colors.black.withValues(alpha: 0.3),
                     child: IconButton(
                       icon: const Icon(Icons.shopping_cart_outlined,
                           color: Colors.white, size: 20),
@@ -97,7 +97,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                   ),
                   const SizedBox(width: 8),
                   CircleAvatar(
-                    backgroundColor: Colors.black.withOpacity(0.3),
+                    backgroundColor: Colors.black.withValues(alpha: 0.3),
                     child: IconButton(
                       icon: const Icon(Icons.share_outlined,
                           color: Colors.white, size: 20),
@@ -189,7 +189,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                 border: Border.all(color: AppColors.primary, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     blurRadius: 15,
                     spreadRadius: 2,
                   ),
@@ -305,7 +305,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
       },
       style: OutlinedButton.styleFrom(
         foregroundColor: isPending ? Colors.grey : AppColors.primary,
-        side: BorderSide(color: isPending ? Colors.grey.withOpacity(0.5) : AppColors.primary.withOpacity(0.5)),
+        side: BorderSide(color: isPending ? Colors.grey.withValues(alpha: 0.5) : AppColors.primary.withValues(alpha: 0.5)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         minimumSize: const Size(0, 36),
@@ -388,7 +388,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
       ),
       child: SafeArea(
         child: ElevatedButton(
@@ -536,7 +536,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       child: Text((member['name'] ?? 'U').substring(0, 1).toUpperCase(), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
                     title: Text(member['name'] ?? 'Desconocido', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -588,7 +588,7 @@ class _BusinessProfileScreenState extends ConsumerState<BusinessProfileScreen>
     return Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: (color ?? AppColors.primary).withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: (color ?? AppColors.primary).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Icon(icon, size: 14, color: color ?? AppColors.primary),
@@ -609,3 +609,4 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => Container(color: Colors.white, child: _tabBar);
   @override bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
 }
+

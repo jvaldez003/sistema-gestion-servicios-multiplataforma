@@ -24,7 +24,7 @@ class PromotionalBanner extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.7),
+              AppColors.primary.withValues(alpha: 0.7),
               const Color(0xFFFF8A65),
             ],
             begin: Alignment.topLeft,
@@ -33,7 +33,7 @@ class PromotionalBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -46,7 +46,7 @@ class PromotionalBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
@@ -63,7 +63,7 @@ class PromotionalBanner extends StatelessWidget {
                       Text(
                         '¿Eres emprendedor?',
                         style: AppTypography.bodySmall.copyWith(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -79,7 +79,7 @@ class PromotionalBanner extends StatelessWidget {
                       Text(
                         'Llega a miles de clientes en tu ciudad',
                         style: AppTypography.bodySmall.copyWith(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 11,
                         ),
                       ),
@@ -99,7 +99,7 @@ class PromotionalBanner extends StatelessWidget {
               child: Text(
                 'Gratis',
                 style: AppTypography.bodySmall.copyWith(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -111,3 +111,4 @@ class PromotionalBanner extends StatelessWidget {
     );
   }
 }
+

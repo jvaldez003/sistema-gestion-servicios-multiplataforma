@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/models/post.dart';
@@ -44,7 +43,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       final comment = PostComment(
         id: '', // Will be set by Firestore
         userId: authUser.id,
-        userName: profile?.name ?? authUser.email?.split('@')[0] ?? 'Usuario',
+        userName: profile?.name ?? authUser.email.split('@')[0] ?? 'Usuario',
         userAvatar: profile?.photoUrl ?? '',
         text: _controller.text.trim(),
         createdAt: DateTime.now(),

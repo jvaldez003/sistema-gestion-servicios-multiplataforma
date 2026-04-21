@@ -4,12 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../widgets/business_card.dart';
 import '../widgets/appointments_tab.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/promotional_banner.dart';
-import '../providers/business_providers.dart';
 import '../providers/post_providers.dart';
+import '../providers/business_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/post_card.dart';
@@ -179,7 +178,7 @@ class ExplorarTab extends ConsumerWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
                               ],
                             ),
                             child: Column(
@@ -202,7 +201,7 @@ class ExplorarTab extends ConsumerWidget {
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                             colors: [
-                                              AppColors.primary.withOpacity(0.8),
+                                              AppColors.primary.withValues(alpha: 0.8),
                                               AppColors.primary,
                                             ],
                                           ),
@@ -335,9 +334,9 @@ class ExplorarTab extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.1),
+                        color: Colors.amber.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         children: [
@@ -415,3 +414,4 @@ class PlaceholderWidget extends StatelessWidget {
     );
   }
 }
+

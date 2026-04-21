@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -10,11 +9,14 @@ import '../../../admin/presentation/providers/admin_providers.dart';
 import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../providers/user_stats_providers.dart';
 import '../providers/booking_providers.dart';
-import '../../domain/models/business.dart';
-import '../widgets/business_card.dart';
 import '../widgets/business_small_card.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../../auth/domain/entities/app_user.dart';
+import '../screens/personal_data_screen.dart';
+import '../screens/notifications_screen.dart';
+import '../screens/security_screen.dart';
+import '../screens/favorites_screen.dart';
+import '../screens/orders_screen.dart';
+import '../screens/settings_screen.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -62,7 +64,13 @@ class ProfileTab extends ConsumerWidget {
           SliverToBoxAdapter(
             child: _buildSectionHeader(
                 context, 'Negocios Favoritos', 'Ver todos', Icons.favorite,
-                color: AppColors.error),
+                color: AppColors.error,
+                onSubtitleTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen(),
+                  ),
+                )),
           ),
 
           // Favorites Horizontal List
@@ -84,24 +92,36 @@ class ProfileTab extends ConsumerWidget {
                 icon: Icons.person_outline,
                 title: 'Datos personales',
                 subtitle: user?.name ?? 'Nombre no configurado',
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.location_on_outlined,
-                title: 'Direcciones guardadas',
-                subtitle: '2 direcciones',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PersonalDataScreen(),
+                  ),
+                ),
               ),
               _buildMenuItem(
                 context,
                 icon: Icons.notifications_none_outlined,
                 title: 'Notificaciones',
                 subtitle: 'Activadas',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
+                ),
               ),
               _buildMenuItem(
                 context,
                 icon: Icons.lock_outline,
                 title: 'Seguridad',
                 subtitle: 'Contraseña y privacidad',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SecurityScreen(),
+                  ),
+                ),
                 isLast: true,
               ),
             ]),
@@ -152,21 +172,27 @@ class ProfileTab extends ConsumerWidget {
             child: _buildMenuContainer(context, [
               _buildMenuItem(
                 context,
-                icon: Icons.calendar_month_outlined,
-                title: 'Mis citas',
-                subtitle: 'Historial y próximas citas',
-              ),
-              _buildMenuItem(
-                context,
                 icon: Icons.favorite_border_rounded,
                 title: 'Favoritos',
                 subtitle: 'Negocios que te encantan',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen(),
+                  ),
+                ),
               ),
               _buildMenuItem(
                 context,
                 icon: Icons.history_rounded,
                 title: 'Mis pedidos',
                 subtitle: 'Historial de compras',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OrdersScreen(),
+                  ),
+                ),
                 isLast: true,
               ),
             ]),
@@ -280,9 +306,22 @@ class ProfileTab extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              _buildHeaderIcon(Icons.notifications_none_rounded, showBadge: true),
+              _buildHeaderIcon(context, Icons.notifications_none_rounded,
+                  onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationsScreen(),
+                        ),
+                      ),
+                  showBadge: true),
               const SizedBox(width: AppSpacing.md),
-              _buildHeaderIcon(Icons.settings_outlined),
+              _buildHeaderIcon(context, Icons.settings_outlined,
+                  onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      )),
             ],
           ),
         ),
@@ -290,34 +329,38 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderIcon(IconData icon, {bool showBadge = false}) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(icon, color: Colors.white, size: 24),
-          if (showBadge)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981), // Green for notifications
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: 2),
+  Widget _buildHeaderIcon(BuildContext context, IconData icon,
+      {required VoidCallback onTap, bool showBadge = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            if (showBadge)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981), // Green for notifications
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary, width: 2),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -528,7 +571,7 @@ class ProfileTab extends ConsumerWidget {
 
   Widget _buildSectionHeader(
       BuildContext context, String title, String subtitle, IconData icon,
-      {Color? color, bool isCategory = false}) {
+      {Color? color, bool isCategory = false, VoidCallback? onSubtitleTap}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.md),
@@ -553,10 +596,16 @@ class ProfileTab extends ConsumerWidget {
           ),
           const Spacer(),
           if (subtitle.isNotEmpty)
-            Text(
-              subtitle,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+            GestureDetector(
+              onTap: onSubtitleTap,
+              child: Text(
+                subtitle,
+                style: AppTypography.bodySmall.copyWith(
+                  color: onSubtitleTap != null
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  fontWeight: onSubtitleTap != null ? FontWeight.bold : null,
+                ),
               ),
             ),
         ],

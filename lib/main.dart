@@ -6,9 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_typography.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/auth/presentation/providers/auth_notifier.dart';
-import 'features/home/presentation/screens/home_screen.dart';
 
 import 'core/navigation/router.dart';
 

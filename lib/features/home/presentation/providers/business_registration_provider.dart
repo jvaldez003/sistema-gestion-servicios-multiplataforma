@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/business.dart';
 import '../../domain/repositories/business_repository.dart';
-import './business_providers.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import './business_providers.dart';
 
 class BusinessRegistrationState {
   final int currentStep;
@@ -122,11 +122,11 @@ class BusinessRegistrationNotifier
     state = state.copyWith(isLoading: true);
     try {
       final business = Business(
-        id: _currentUserId!, // Using user ID as the business ID for a 1:1 relationship
+        id: _currentUserId!,
         name: state.name,
         category: state.category,
         description: state.description,
-        imageUrl: '', // No default image - admin uploads via gallery
+        imageUrl: '',
         avatarUrl: '',
         rating: 0.0,
         totalReviews: 0,

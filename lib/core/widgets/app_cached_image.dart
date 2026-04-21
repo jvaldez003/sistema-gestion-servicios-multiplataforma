@@ -88,7 +88,7 @@ class AppCachedImage extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: AppColors.textSecondary.withOpacity(0.4),
+          color: AppColors.textSecondary.withValues(alpha: 0.4),
           size: (height ?? 100) * 0.3,
         ),
       ),
@@ -127,10 +127,11 @@ class AppCachedImage extends StatelessWidget {
       child: Center(
         child: Icon(
           errorIcon,
-          color: AppColors.error.withOpacity(0.5),
+          color: AppColors.error.withValues(alpha: 0.5),
           size: (height ?? 100) * 0.3,
         ),
       ),
     );
   }
 }
+

@@ -75,7 +75,7 @@ class _RegisterBusinessStepTwoState
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -278,3 +278,4 @@ class _RegisterBusinessStepTwoState
     );
   }
 }
+

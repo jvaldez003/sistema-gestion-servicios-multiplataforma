@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/app_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
-import '../screens/business_profile_screen.dart';
 
 class BusinessCard extends StatelessWidget {
   final Business business;
@@ -23,7 +22,7 @@ class BusinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -39,18 +38,19 @@ class BusinessCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    child: business.avatarUrl.isNotEmpty
-                        ? AppCachedImage(
-                            imageUrl: business.avatarUrl,
-                            borderRadius: BorderRadius.circular(24),
-                          )
-                        : Text(
+                    backgroundImage: business.avatarUrl.isNotEmpty
+                        ? CachedNetworkImageProvider(business.avatarUrl)
+                        : null,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    child: business.avatarUrl.isEmpty
+                        ? Text(
                             business.name.substring(0, 1).toUpperCase(),
                             style: AppTypography.titleMedium.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                             ),
-                          ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -142,17 +142,46 @@ class BusinessCard extends StatelessWidget {
               ),
             ),
 
-            // Main Image with Overlays (show if gallery or main image exists)
-            if (business.galleryImages.isNotEmpty || business.imageUrl.isNotEmpty)
+            // Main Image with Overlays (only if gallery images exist)
+            if (business.galleryImages.isNotEmpty)
               Stack(
                 children: [
-                  AppCachedImage(
-                    imageUrl: business.galleryImages.isNotEmpty
-                        ? business.galleryImages.first
-                        : business.imageUrl,
-                    height: 200,
-                    width: double.infinity,
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(24),
+                    child: CachedNetworkImage(
+                      imageUrl: business.galleryImages.isNotEmpty
+                          ? business.galleryImages.first
+                          : business.imageUrl,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported_outlined,
+                              size: 40, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
                   ),
                   // Gradient Overlay
                   Positioned.fill(
@@ -164,7 +193,7 @@ class BusinessCard extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withValues(alpha: 0.6),
                           ],
                         ),
                       ),
@@ -203,7 +232,7 @@ class BusinessCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -250,7 +279,7 @@ class BusinessCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: index == 0
                                         ? Colors.white
-                                        : Colors.white.withOpacity(0.5),
+                                        : Colors.white.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 )),
@@ -265,7 +294,7 @@ class BusinessCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -309,7 +338,7 @@ class BusinessCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.08),
+                                color: AppColors.primary.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -402,3 +431,4 @@ class BusinessCard extends StatelessWidget {
     );
   }
 }
+

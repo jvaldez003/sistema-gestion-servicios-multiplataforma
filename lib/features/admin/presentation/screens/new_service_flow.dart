@@ -181,7 +181,7 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
           decoration: BoxDecoration(
             color: const Color(0xFFF3E8FF),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -219,3 +219,4 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
     );
   }
 }
+

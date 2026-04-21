@@ -8,7 +8,6 @@ import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typogra
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_post_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_product_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_service_flow.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/team_management_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,8 +15,6 @@ import 'dart:convert';
 import 'manage_products_screen.dart';
 import 'manage_gallery_screen.dart';
 import 'manage_services_screen.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -69,7 +66,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.arrow_back,
@@ -80,7 +77,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.bolt,
@@ -96,7 +93,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -133,7 +130,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   DateFormat('EEEE, d de MMMM yyyy', 'es')
                       .format(DateTime.now()),
                   style: AppTypography.bodySmall
-                      .copyWith(color: Colors.white.withOpacity(0.8)),
+                      .copyWith(color: Colors.white.withValues(alpha: 0.8)),
                 ),
               ],
             ),
@@ -277,12 +274,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis),
                     ),
                     GestureDetector(
-                      onTap: () => _addGalleryImage(context, ref, business.id),
+                      onTap: () => _addGalleryImage(context, business.id),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -358,22 +355,38 @@ class AdminDashboardScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(right: 10),
                             child: Stack(
                               children: [
-                                AppCachedImage(
-                                  imageUrl: images[index],
-                                  width: 100,
-                                  height: 100,
+                                ClipRRect(
                                   borderRadius: BorderRadius.circular(14),
+                                  child: Image.network(
+                                    images[index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: const Icon(
+                                          Icons.broken_image_outlined,
+                                          color: AppColors.textSecondary),
+                                    ),
+                                  ),
                                 ),
                                 Positioned(
                                   top: 4,
                                   right: 4,
                                   child: GestureDetector(
                                     onTap: () => _removeGalleryImage(
-                                        context, ref, business.id, images, index),
+                                        business.id, images, index),
                                     child: Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.5),
+                                        color: Colors.black.withValues(alpha: 0.5),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.close,
@@ -742,7 +755,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     color: (isUp
                             ? const Color(0xFF10B981)
                             : const Color(0xFFEF4444))
-                        .withOpacity(0.05),
+                        .withValues(alpha: 0.05),
                     shape: BoxShape.circle),
                 child: Icon(icon,
                     size: 18,
@@ -808,7 +821,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isActive
                 ? const Color(0xFFF97316)
-                : const Color(0xFFC084FC).withOpacity(0.5),
+                : const Color(0xFFC084FC).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16), // Pill shape
           ),
           child: isActive
@@ -856,7 +869,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _addGalleryImage(BuildContext context, WidgetRef ref, String businessId) {
+  void _addGalleryImage(BuildContext context, String businessId) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -889,7 +902,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF97316).withOpacity(0.1),
+                    color: const Color(0xFFF97316).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.photo_library_outlined,
@@ -899,10 +912,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: const Text('Seleccionar de tus fotos',
                     style: TextStyle(fontSize: 12)),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _pickImageFromGallery(ref, businessId);
-                  },
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _pickImageFromGallery(businessId);
+                },
               ),
               const SizedBox(height: 8),
               // Option 2: From URL
@@ -910,7 +923,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC084FC).withOpacity(0.1),
+                    color: const Color(0xFFC084FC).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.link, color: Color(0xFFC084FC)),
@@ -921,7 +934,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _addGalleryImageFromUrl(context, ref, businessId);
+                  _addGalleryImageFromUrl(context, businessId);
                 },
               ),
               const SizedBox(height: 12),
@@ -932,43 +945,31 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickImageFromGallery(WidgetRef ref, String businessId) async {
+  Future<void> _pickImageFromGallery(String businessId) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
         source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
-    
     if (picked != null) {
       final bytes = await picked.readAsBytes();
+      final base64Str = base64Encode(bytes);
       final mimeType = picked.mimeType ?? 'image/jpeg';
-      
-      // Upload to Storage
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final path = 'businesses/$businessId/gallery/$fileName';
-      
-      try {
-        final repo = ref.read(businessRepositoryProvider);
-        final downloadUrl = await repo.uploadImage(
-          path, 
-          bytes, 
-          mimeType
-        );
+      final dataUri = 'data:$mimeType;base64,$base64Str';
 
-        final doc = await FirebaseFirestore.instance
-            .collection('businesses')
-            .doc(businessId)
-            .get();
-        final data = doc.data() ?? {};
-        final images = List<String>.from(data['galleryImages'] ?? []);
-        images.add(downloadUrl);
-        
-        await repo.updateGalleryImages(businessId, images);
-      } catch (e) {
-        debugPrint('Error uploading image: $e');
-      }
+      final doc = await FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(businessId)
+          .get();
+      final data = doc.data() ?? {};
+      final images = List<String>.from(data['galleryImages'] ?? []);
+      images.add(dataUri);
+      await FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(businessId)
+          .update({'galleryImages': images});
     }
   }
 
-  void _addGalleryImageFromUrl(BuildContext context, WidgetRef ref, String businessId) {
+  void _addGalleryImageFromUrl(BuildContext context, String businessId) {
     final urlController = TextEditingController();
     showDialog(
       context: context,
@@ -1018,9 +1019,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                 final data = doc.data() ?? {};
                 final images = List<String>.from(data['galleryImages'] ?? []);
                 images.add(urlController.text.trim());
-                
-                await ref.read(businessRepositoryProvider)
-                    .updateGalleryImages(businessId, images);
+                await FirebaseFirestore.instance
+                    .collection('businesses')
+                    .doc(businessId)
+                    .update({'galleryImages': images});
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
@@ -1038,20 +1040,13 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   void _removeGalleryImage(
-      BuildContext context, WidgetRef ref, String businessId, List<String> images, int index) async {
+      String businessId, List<String> images, int index) async {
     final updatedImages = List<String>.from(images);
     updatedImages.removeAt(index);
-    
-    try {
-      await ref.read(businessRepositoryProvider)
-          .updateGalleryImages(businessId, updatedImages);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al eliminar imagen: $e')),
-        );
-      }
-    }
+    await FirebaseFirestore.instance
+        .collection('businesses')
+        .doc(businessId)
+        .update({'galleryImages': updatedImages});
   }
 
   Widget _buildPublishCard(
@@ -1069,7 +1064,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -1275,3 +1270,4 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 }
+
