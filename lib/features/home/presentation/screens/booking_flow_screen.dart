@@ -655,26 +655,61 @@ class _SchedulingStepState extends ConsumerState<_SchedulingStep> {
                         .map((a) => DateFormat('HH:mm').format(a.dateTime))
                         .toSet();
 
+                    final team = teamAsync.value ?? [];
+                    final selectedMember = team.firstWhere(
+                      (m) => (m['userId'] ?? m['id']) == bookingState.professionalId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    
+                    final List<String> availableHours = (selectedMember['workingHours'] as List?)?.cast<String>() ?? 
+                        ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+
+                    final now = DateTime.now();
+                    final isToday = isSameDay(bookingState.selectedDate, now);
+
                     return Wrap(
                       spacing: 12,
                       runSpacing: 12,
-                      children: ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'].map((time) {
+                      children: availableHours.map((time) {
                         final isSelected = bookingState.selectedTime == time;
                         final isOccupied = occupiedTimes.contains(time);
                         
+                        bool isPassed = false;
+                        if (isToday) {
+                          try {
+                            final parts = time.split(':');
+                            final hour = int.parse(parts[0]);
+                            final minute = int.parse(parts[1]);
+                            final slotDateTime = DateTime(
+                              now.year,
+                              now.month,
+                              now.day,
+                              hour,
+                              minute,
+                            );
+                            // 30 minutes buffer
+                            isPassed = slotDateTime.isBefore(now.add(const Duration(minutes: 30)));
+                          } catch (e) {
+                            isPassed = false;
+                          }
+                        }
+
+                        final bool isDisabled = isOccupied || isPassed;
+                        
                         return InkWell(
-                          onTap: isOccupied ? null : () => ref.read(bookingStateProvider.notifier).selectTime(time),
+                          onTap: isDisabled ? null : () => ref.read(bookingStateProvider.notifier).selectTime(time),
                           borderRadius: BorderRadius.circular(16),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                             decoration: BoxDecoration(
-                              color: isOccupied 
+                              color: isDisabled 
                                 ? const Color(0xFFF1F5F9) 
                                 : (isSelected ? AppColors.primary : Colors.white),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                                width: isSelected ? 2 : 1,
                               ),
                               boxShadow: isSelected ? [
                                 BoxShadow(
@@ -684,15 +719,38 @@ class _SchedulingStepState extends ConsumerState<_SchedulingStep> {
                                 )
                               ] : null,
                             ),
-                            child: Text(
-                              time,
-                              style: TextStyle(
-                                color: isOccupied 
-                                  ? const Color(0xFF94A3B8) 
-                                  : (isSelected ? Colors.white : AppColors.textPrimary),
-                                fontWeight: FontWeight.bold,
-                                decoration: isOccupied ? TextDecoration.lineThrough : null,
-                              ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  time,
+                                  style: TextStyle(
+                                    color: isDisabled 
+                                      ? const Color(0xFF94A3B8) 
+                                      : (isSelected ? Colors.white : AppColors.textPrimary),
+                                    fontWeight: FontWeight.bold,
+                                    decoration: isDisabled ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                                if (isOccupied)
+                                  Text(
+                                    'Ocupado',
+                                    style: TextStyle(
+                                      color: const Color(0xFF94A3B8),
+                                      fontSize: 9,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  )
+                                else if (isPassed)
+                                  Text(
+                                    'Pasado',
+                                    style: TextStyle(
+                                      color: const Color(0xFF94A3B8),
+                                      fontSize: 9,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         );
