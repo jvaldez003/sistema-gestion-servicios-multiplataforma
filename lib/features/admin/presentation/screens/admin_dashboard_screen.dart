@@ -15,6 +15,7 @@ import 'dart:convert';
 import 'manage_products_screen.dart';
 import 'manage_gallery_screen.dart';
 import 'manage_services_screen.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -120,17 +121,69 @@ class AdminDashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  business.name,
-                  style: AppTypography.h2.copyWith(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  DateFormat('EEEE, d de MMMM yyyy', 'es')
-                      .format(DateTime.now()),
-                  style: AppTypography.bodySmall
-                      .copyWith(color: Colors.white.withOpacity(0.8)),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _pickAvatar(business.id),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.5), width: 2),
+                        ),
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Colors.white.withOpacity(0.1),
+                              child: business.avatarUrl.isNotEmpty
+                                  ? AppCachedImage(
+                                      imageUrl: business.avatarUrl,
+                                      borderRadius: BorderRadius.circular(32),
+                                    )
+                                  : const Icon(Icons.store,
+                                      color: Colors.white, size: 28),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF97316),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.camera_alt,
+                                    color: Colors.white, size: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            business.name,
+                            style: AppTypography.h2.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24),
+                          ),
+                          Text(
+                            DateFormat('EEEE, d de MMMM yyyy', 'es')
+                                .format(DateTime.now()),
+                            style: AppTypography.bodySmall
+                                .copyWith(color: Colors.white.withOpacity(0.8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -357,24 +410,11 @@ class AdminDashboardScreen extends ConsumerWidget {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(14),
-                                  child: Image.network(
-                                    images[index],
+                                  child: AppCachedImage(
+                                    imageUrl: images[index],
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(
-                                          Icons.broken_image_outlined,
-                                          color: AppColors.textSecondary),
-                                    ),
                                   ),
                                 ),
                                 Positioned(
@@ -1268,6 +1308,23 @@ class AdminDashboardScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _pickAvatar(String businessId) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+        source: ImageSource.gallery, maxWidth: 500, imageQuality: 80);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      final base64Str = base64Encode(bytes);
+      final mimeType = picked.mimeType ?? 'image/jpeg';
+      final dataUri = 'data:$mimeType;base64,$base64Str';
+
+      await FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(businessId)
+          .update({'avatarUrl': dataUri, 'imageUrl': dataUri});
+    }
   }
 }
 

@@ -344,11 +344,15 @@ class _PremiumBusinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(32),
           child: Stack(
             children: [
-              // 1. Full Background Image
+              // 1. Full Background
               Positioned.fill(
-                child: business.imageUrl.isNotEmpty || business.avatarUrl.isNotEmpty
+                child: business.imageUrl.isNotEmpty || business.avatarUrl.isNotEmpty || business.galleryImages.isNotEmpty
                     ? AppCachedImage(
-                        imageUrl: business.imageUrl.isNotEmpty ? business.imageUrl : business.avatarUrl,
+                        imageUrl: business.imageUrl.isNotEmpty 
+                            ? business.imageUrl 
+                            : (business.avatarUrl.isNotEmpty 
+                                ? business.avatarUrl 
+                                : business.galleryImages.first),
                         fit: BoxFit.cover,
                       )
                     : Container(
@@ -356,13 +360,17 @@ class _PremiumBusinessCard extends StatelessWidget {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [AppColors.primary.withOpacity(0.8), AppColors.primary],
+                            colors: [
+                              AppColors.primary.withOpacity(0.8),
+                              const Color(0xFFC084FC),
+                            ],
                           ),
                         ),
                         child: Center(
-                          child: Text(
-                            business.name.isNotEmpty ? business.name[0].toUpperCase() : '?',
-                            style: const TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.w900),
+                          child: Icon(
+                            Icons.storefront_outlined,
+                            size: 80,
+                            color: Colors.white.withOpacity(0.2),
                           ),
                         ),
                       ),
