@@ -66,7 +66,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: Colors.white.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.arrow_back,
@@ -77,7 +77,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.bolt,
@@ -93,7 +93,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -130,7 +130,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   DateFormat('EEEE, d de MMMM yyyy', 'es')
                       .format(DateTime.now()),
                   style: AppTypography.bodySmall
-                      .copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                      .copyWith(color: Colors.white.withOpacity(0.8)),
                 ),
               ],
             ),
@@ -279,7 +279,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -386,7 +386,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                                     child: Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.5),
+                                        color: Colors.black.withOpacity(0.5),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.close,
@@ -755,7 +755,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     color: (isUp
                             ? const Color(0xFF10B981)
                             : const Color(0xFFEF4444))
-                        .withValues(alpha: 0.05),
+                        .withOpacity(0.05),
                     shape: BoxShape.circle),
                 child: Icon(icon,
                     size: 18,

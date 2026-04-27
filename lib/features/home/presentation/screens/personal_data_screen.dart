@@ -228,7 +228,7 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
                                 borderRadius: BorderRadius.circular(55),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.25),
+                                    color: AppColors.primary.withOpacity(0.25),
                                     blurRadius: 14,
                                     offset: const Offset(0, 6),
                                   ),
@@ -309,7 +309,7 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
                     border: Border.all(color: const Color(0xFFF1F5F9)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
+                        color: Colors.black.withOpacity(0.03),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -426,9 +426,9 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
+                    color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
@@ -475,7 +475,7 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppColors.primary, size: 20),
@@ -500,7 +500,7 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
                 ],
               ),
             ),
-            Icon(Icons.edit_outlined, size: 18, color: AppColors.primary.withValues(alpha: 0.7)),
+            Icon(Icons.edit_outlined, size: 18, color: AppColors.primary.withOpacity(0.7)),
           ],
         ),
       ),
@@ -521,7 +521,7 @@ class _PersonalDataScreenState extends ConsumerState<PersonalDataScreen> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

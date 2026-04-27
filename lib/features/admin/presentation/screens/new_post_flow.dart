@@ -86,7 +86,8 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
   Future<void> _publish() async {
     setState(() => _isPublishing = true);
     try {
-      final repo = ref.read(businessRepositoryProvider);
+      final postRepo = ref.read(postRepositoryProvider);
+      final businessRepo = ref.read(businessRepositoryProvider);
       final isUpdating = widget.existingPost != null;
 
       String finalImageUrl = widget.existingPost?['imageUrl'] ?? '';
@@ -98,7 +99,7 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
         final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         final path = 'businesses/${widget.businessId}/posts/$fileName';
         
-        finalImageUrl = await repo.uploadImage(path, bytes, mimeType);
+        finalImageUrl = await businessRepo.uploadImage(path, bytes, mimeType);
       }
 
       final postData = {
@@ -110,10 +111,10 @@ class _NewPostFlowState extends ConsumerState<NewPostFlow> {
       };
 
       if (isUpdating) {
-        await repo.updatePost(widget.businessId, widget.existingPost!['id'], postData);
+        await postRepo.updatePost(widget.businessId, widget.existingPost!['id'], postData);
       } else {
         postData['createdAt'] = DateTime.now().toIso8601String();
-        await repo.addPost(widget.businessId, postData);
+        await postRepo.addPost(widget.businessId, postData);
       }
 
       if (mounted) {

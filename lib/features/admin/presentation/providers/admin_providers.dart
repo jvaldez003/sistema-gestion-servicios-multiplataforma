@@ -15,14 +15,13 @@ final adminBusinessProvider = FutureProvider<Business?>((ref) async {
 });
 
 final adminServicesProvider = StreamProvider<List<Service>>((ref) {
-  final repository = ref.watch(businessRepositoryProvider);
+  final repository = ref.watch(serviceRepositoryProvider);
   final businessAsync = ref.watch(adminBusinessProvider);
 
   return businessAsync.when(
     data: (business) {
       if (business == null) return Stream.value([]);
-      return repository.getServicesStream(business.id).map((list) =>
-          list.map((map) => Service.fromMap(map, map['id'] ?? '')).toList());
+      return repository.getServicesStream(business.id);
     },
     loading: () => Stream.value([]),
     error: (err, stack) => Stream.value([]),
@@ -30,7 +29,7 @@ final adminServicesProvider = StreamProvider<List<Service>>((ref) {
 });
 
 final adminProductsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
-  final repository = ref.watch(businessRepositoryProvider);
+  final repository = ref.watch(productRepositoryProvider);
   final businessAsync = ref.watch(adminBusinessProvider);
 
   return businessAsync.when(
@@ -44,7 +43,7 @@ final adminProductsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
 });
 
 final adminPostsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
-  final repository = ref.watch(businessRepositoryProvider);
+  final repository = ref.watch(postRepositoryProvider);
   final businessAsync = ref.watch(adminBusinessProvider);
 
   return businessAsync.when(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
 import '../widgets/content_stepper.dart';
 
 class NewServiceFlow extends ConsumerStatefulWidget {
@@ -71,21 +72,22 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
   Future<void> _publish() async {
     setState(() => _isPublishing = true);
     try {
-      final repo = ref.read(businessRepositoryProvider);
+      final repo = ref.read(serviceRepositoryProvider);
       final isUpdating = widget.existingService != null;
 
-      final serviceData = {
-        'name': _nameController.text,
-        'price': _priceController.text,
-        'duration': _durationController.text,
-        'updatedAt': DateTime.now().toIso8601String(),
-      };
+      final serviceModel = Service(
+        id: isUpdating ? widget.existingService!['id'] : '',
+        name: _nameController.text,
+        description: '', // optional description if needed later
+        price: double.tryParse(_priceController.text) ?? 0.0,
+        duration: _durationController.text,
+        isActive: true,
+      );
 
       if (isUpdating) {
-        await repo.updateService(widget.businessId, widget.existingService!['id'], serviceData);
+        await repo.updateService(widget.businessId, widget.existingService!['id'], serviceModel);
       } else {
-        serviceData['createdAt'] = DateTime.now().toIso8601String();
-        await repo.addService(widget.businessId, serviceData);
+        await repo.addService(widget.businessId, serviceModel);
       }
 
       if (mounted) {
@@ -181,7 +183,7 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
           decoration: BoxDecoration(
             color: const Color(0xFFF3E8FF),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
           ),
           child: Row(
             children: [
@@ -219,4 +221,3 @@ class _NewServiceFlowState extends ConsumerState<NewServiceFlow> {
     );
   }
 }
-

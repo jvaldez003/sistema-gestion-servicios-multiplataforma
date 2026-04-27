@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/profile_tab.dart';
 import '../widgets/post_card.dart';
 import '../../../../core/widgets/app_cached_image.dart';
+import '../../domain/models/business.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -93,36 +95,49 @@ class ExplorarTab extends ConsumerWidget {
           // Header FlowServ
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg),
               child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 28),
-                          const SizedBox(width: 8),
-                          Text(
-                            'FlowServ',
-                            style: AppTypography.h2.copyWith(color: AppColors.primary, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 24),
+                            const SizedBox(width: 6),
+                            Text(
+                              'FlowServ',
+                              style: AppTypography.h3.copyWith(
+                                color: AppColors.primary, 
+                                fontWeight: FontWeight.w900, 
+                                letterSpacing: -0.5
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        RichText(
+                          text: TextSpan(
+                            style: AppTypography.h2.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                            children: [
+                              const TextSpan(text: 'Hola, '),
+                              TextSpan(
+                                text: (authState.value?.name ?? 'Invitado').split(' ').first,
+                                style: const TextStyle(color: AppColors.primary),
+                              ),
+                              const TextSpan(text: ' 👋'),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on_rounded, size: 12, color: AppColors.textSecondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Explorar en tu zona',
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '¿Qué servicio buscas hoy?',
+                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
                   _buildHeaderIcon(Icons.search_rounded),
                   const SizedBox(width: AppSpacing.md),
                   _buildHeaderIcon(Icons.notifications_none_rounded, showBadge: true),
@@ -163,114 +178,19 @@ class ExplorarTab extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 businessesAsync.when(
                   data: (businesses) => SizedBox(
-                    height: 240, // Increased height for the button
+                    height: 280,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(left: AppSpacing.lg),
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(left: AppSpacing.lg, right: AppSpacing.lg),
                       itemCount: businesses.length,
                       itemBuilder: (context, index) {
                         final b = businesses[index];
-                        return GestureDetector(
-                          onTap: () => context.push('/business/${b.id}', extra: b),
-                          child: Container(
-                            width: 160,
-                            margin: const EdgeInsets.only(right: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                  child: b.avatarUrl.isNotEmpty || b.imageUrl.isNotEmpty
-                                    ? AppCachedImage(
-                                        imageUrl: b.avatarUrl.isNotEmpty ? b.avatarUrl : b.imageUrl,
-                                        height: 100,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Container(
-                                        height: 100,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              AppColors.primary.withValues(alpha: 0.8),
-                                              AppColors.primary,
-                                            ],
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            b.name.isNotEmpty ? b.name[0].toUpperCase() : '?',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 40,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        b.name,
-                                        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            b.rating.toString(),
-                                            style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Spacer(),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    height: 36,
-                                    child: ElevatedButton(
-                                      onPressed: () => context.push('/business/${b.id}/booking', extra: b),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        elevation: 0,
-                                      ),
-                                      child: const Text('Reservar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
+                        return _PremiumBusinessCard(business: b);
                       },
                     ),
                   ),
-                  loading: () => const SizedBox(height: 180, child: Center(child: CircularProgressIndicator())),
+                  loading: () => const SizedBox(height: 200, child: Center(child: CircularProgressIndicator())),
                   error: (err, _) => const SizedBox.shrink(),
                 ),
               ],
@@ -311,16 +231,13 @@ class ExplorarTab extends ConsumerWidget {
                   ),
                 );
               }
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => PostCard(
-                      post: posts[index],
-                      currentUserId: currentUserId,
-                    ),
-                    childCount: posts.length,
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => PostCard(
+                    post: posts[index],
+                    currentUserId: currentUserId,
                   ),
+                  childCount: posts.length,
                 ),
               );
             },
@@ -335,9 +252,9 @@ class ExplorarTab extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.1),
+                        color: Colors.amber.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                        border: Border.all(color: Colors.amber.withOpacity(0.3)),
                       ),
                       child: Column(
                         children: [
@@ -401,18 +318,175 @@ class ExplorarTab extends ConsumerWidget {
   }
 }
 
-class PlaceholderWidget extends StatelessWidget {
-  final String title;
-  const PlaceholderWidget({super.key, required this.title});
+class _PremiumBusinessCard extends StatelessWidget {
+  final Business business;
+
+  const _PremiumBusinessCard({required this.business});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        title,
-        style: AppTypography.h2.copyWith(color: AppColors.textSecondary),
+    return GestureDetector(
+      onTap: () => context.push('/business/${business.id}', extra: business),
+      child: Container(
+        width: 240,
+        margin: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: Stack(
+            children: [
+              // 1. Full Background Image
+              Positioned.fill(
+                child: business.imageUrl.isNotEmpty || business.avatarUrl.isNotEmpty
+                    ? AppCachedImage(
+                        imageUrl: business.imageUrl.isNotEmpty ? business.imageUrl : business.avatarUrl,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [AppColors.primary.withOpacity(0.8), AppColors.primary],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            business.name.isNotEmpty ? business.name[0].toUpperCase() : '?',
+                            style: const TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ),
+              ),
+
+              // 2. Gradient Overlay for readability
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 3. Glassmorphism Info Panel
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  business.name,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      business.rating.toString(),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('•', style: TextStyle(color: Colors.white54)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      business.category,
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Minimalist Circle Action Button
+                          GestureDetector(
+                            onTap: () => context.push('/business/${business.id}/booking', extra: business),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                              ),
+                              child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // 4. Distance Badge (Floating top-right)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.white, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${business.distance} km',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+
 

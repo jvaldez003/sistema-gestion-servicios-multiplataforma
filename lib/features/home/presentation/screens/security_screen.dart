@@ -250,7 +250,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             border: Border.all(color: const Color(0xFFF1F5F9)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
+                color: Colors.black.withOpacity(0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -278,7 +278,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (color ?? AppColors.primary).withValues(alpha: 0.1),
+              color: (color ?? AppColors.primary).withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color ?? AppColors.primary, size: 20),

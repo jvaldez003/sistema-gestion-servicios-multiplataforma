@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 
-class AddMemberFlow extends StatefulWidget {
+class AddMemberFlow extends ConsumerStatefulWidget {
   final String businessId;
   final Map<String, dynamic>? existingMember;
 
@@ -14,10 +15,10 @@ class AddMemberFlow extends StatefulWidget {
   });
 
   @override
-  State<AddMemberFlow> createState() => _AddMemberFlowState();
+  ConsumerState<AddMemberFlow> createState() => _AddMemberFlowState();
 }
 
-class _AddMemberFlowState extends State<AddMemberFlow> {
+class _AddMemberFlowState extends ConsumerState<AddMemberFlow> {
   late TextEditingController _nameController;
   late TextEditingController _roleController;
   late TextEditingController _emailController;
@@ -59,23 +60,16 @@ class _AddMemberFlowState extends State<AddMemberFlow> {
         'phone': _phoneController.text.trim(),
         'commission': int.tryParse(_commissionController.text.trim()) ?? 50,
         'status': widget.existingMember?['status'] ?? 'active',
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
+      final repo = ref.read(teamRepositoryProvider);
+
       if (isUpdating) {
-        await FirebaseFirestore.instance
-            .collection('businesses')
-            .doc(widget.businessId)
-            .collection('team')
-            .doc(widget.existingMember!['id'])
-            .update(memberData);
+        await repo.updateTeamMember(widget.businessId, widget.existingMember!['id'], memberData);
       } else {
-        memberData['createdAt'] = FieldValue.serverTimestamp();
-        await FirebaseFirestore.instance
-            .collection('businesses')
-            .doc(widget.businessId)
-            .collection('team')
-            .add(memberData);
+        memberData['createdAt'] = DateTime.now().toIso8601String();
+        await repo.addTeamMember(widget.businessId, memberData);
       }
       
       if (mounted) Navigator.pop(context);
@@ -135,7 +129,25 @@ class _AddMemberFlowState extends State<AddMemberFlow> {
             ),
             const SizedBox(height: 24),
 
-            // ... (rest of the fields)
+            _buildLabel('Nombre completo *'),
+            const SizedBox(height: 8),
+            _buildTextField(_nameController, 'Ej: Juan Pérez'),
+            const SizedBox(height: 16),
+
+            _buildLabel('Rol / Especialidad'),
+            const SizedBox(height: 8),
+            _buildTextField(_roleController, 'Ej: Barbero Master'),
+            const SizedBox(height: 16),
+
+            _buildLabel('Email'),
+            const SizedBox(height: 8),
+            _buildTextField(_emailController, 'Ej: juan@barberia.com', keyboardType: TextInputType.emailAddress),
+            const SizedBox(height: 16),
+
+            _buildLabel('Comisión (%)'),
+            const SizedBox(height: 8),
+            _buildTextField(_commissionController, 'Ej: 50', keyboardType: TextInputType.number),
+            const SizedBox(height: 24),
 
             // Actions
             Row(

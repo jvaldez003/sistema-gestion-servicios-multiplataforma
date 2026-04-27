@@ -121,7 +121,7 @@ class ManageServicesScreen extends ConsumerWidget {
     if (confirm == true) {
       try {
         await ref
-            .read(businessRepositoryProvider)
+            .read(serviceRepositoryProvider)
             .deleteService(businessId, serviceId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Servicio eliminado con éxito')),

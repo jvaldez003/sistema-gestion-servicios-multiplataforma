@@ -56,13 +56,13 @@ class _CategorySelectorState extends State<CategorySelector> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 100,
+      height: 110,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: _categories.length,
-        separatorBuilder: (context, index) =>
-            const SizedBox(width: AppSpacing.md),
+        separatorBuilder: (context, index) => const SizedBox(width: 20),
         itemBuilder: (context, index) {
           final isSelected = selectedIndex == index;
           final category = _categories[index];
@@ -72,33 +72,58 @@ class _CategorySelectorState extends State<CategorySelector> {
             child: Column(
               children: [
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 64,
-                  height: 64,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: 68,
+                  height: 68,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? category.color
-                        : category.color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: isSelected
-                        ? Border.all(color: category.color, width: 2)
-                        : null,
+                    color: isSelected ? category.color : Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: category.color.withOpacity(0.4),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            )
+                          ]
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
+                    border: Border.all(
+                      color: isSelected ? category.color : Colors.black.withOpacity(0.05),
+                      width: 1.5,
+                    ),
                   ),
                   child: Icon(
                     category.icon,
                     color: isSelected ? Colors.white : category.color,
-                    size: 30,
+                    size: 28,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 10),
                 Text(
                   category.label,
                   style: AppTypography.bodySmall.copyWith(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color:
-                        isSelected ? category.color : AppColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                    fontSize: 12,
                   ),
                 ),
+                if (isSelected)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: category.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
               ],
             ),
           );

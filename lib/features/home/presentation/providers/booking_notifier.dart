@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/service.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/appointment.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/repositories/booking_repository.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/booking_providers.dart';
 
 class BookingState {
   final List<Service> selectedServices;
@@ -8,6 +11,8 @@ class BookingState {
   final String? professionalId;
   final String? professionalName;
   final int currentStep;
+  final bool isLoading;
+  final String? error;
 
   BookingState({
     this.selectedServices = const [],
@@ -16,6 +21,8 @@ class BookingState {
     this.professionalId,
     this.professionalName,
     this.currentStep = 0,
+    this.isLoading = false,
+    this.error,
   });
 
   double get totalPrice => selectedServices.fold(0, (sum, service) => sum + service.price);
@@ -27,6 +34,8 @@ class BookingState {
     String? professionalId,
     String? professionalName,
     int? currentStep,
+    bool? isLoading,
+    String? error,
   }) {
     return BookingState(
       selectedServices: selectedServices ?? this.selectedServices,
@@ -35,12 +44,16 @@ class BookingState {
       professionalId: professionalId ?? this.professionalId,
       professionalName: professionalName ?? this.professionalName,
       currentStep: currentStep ?? this.currentStep,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
     );
   }
 }
 
 class BookingNotifier extends StateNotifier<BookingState> {
-  BookingNotifier() : super(BookingState());
+  final BookingRepository _repository;
+
+  BookingNotifier(this._repository) : super(BookingState());
 
   void toggleService(Service service) {
     if (state.selectedServices.any((s) => s.id == service.id)) {
@@ -77,8 +90,80 @@ class BookingNotifier extends StateNotifier<BookingState> {
   void reset() {
     state = BookingState();
   }
+
+  void initializeForRescheduling(Appointment appointment, List<Service> availableServices) {
+    final selectedServices = availableServices
+        .where((s) => appointment.serviceIds.contains(s.id))
+        .toList();
+    
+    state = BookingState(
+      selectedServices: selectedServices,
+      selectedDate: appointment.dateTime,
+      selectedTime: "${appointment.dateTime.hour.toString().padLeft(2, '0')}:${appointment.dateTime.minute.toString().padLeft(2, '0')}",
+      professionalId: appointment.professionalId,
+      professionalName: appointment.professionalName,
+      currentStep: 1, 
+    );
+  }
+
+  Future<bool> submitBooking({
+    required String userId,
+    required String businessId,
+    required String businessName,
+    String? rescheduleAppointmentId,
+  }) async {
+    if (state.selectedDate == null || state.selectedTime == null || state.professionalId == null) {
+      state = state.copyWith(error: 'Datos incompletos');
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final appointmentDateTime = DateTime(
+        state.selectedDate!.year,
+        state.selectedDate!.month,
+        state.selectedDate!.day,
+        int.parse(state.selectedTime!.split(':')[0]),
+        int.parse(state.selectedTime!.split(':')[1]),
+      );
+
+      if (rescheduleAppointmentId != null) {
+        await _repository.rescheduleAppointment(
+          rescheduleAppointmentId,
+          appointmentDateTime,
+          state.professionalId!,
+          state.professionalName!,
+          state.selectedServices.map((s) => s.id).toList(),
+          state.selectedServices.map((s) => s.name).toList(),
+          state.totalPrice,
+        );
+      } else {
+        final appointment = Appointment(
+          userId: userId,
+          businessId: businessId,
+          businessName: businessName,
+          serviceIds: state.selectedServices.map((s) => s.id).toList(),
+          serviceNames: state.selectedServices.map((s) => s.name).toList(),
+          totalPrice: state.totalPrice,
+          dateTime: appointmentDateTime,
+          professionalId: state.professionalId!,
+          professionalName: state.professionalName!,
+          createdAt: DateTime.now(),
+        );
+        await _repository.createAppointment(appointment);
+      }
+      
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
 }
 
 final bookingStateProvider = StateNotifierProvider<BookingNotifier, BookingState>((ref) {
-  return BookingNotifier();
+  final repository = ref.watch(bookingRepositoryProvider);
+  return BookingNotifier(repository);
 });

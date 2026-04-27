@@ -55,7 +55,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -82,7 +82,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
+                                    color: Colors.black.withOpacity(0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -102,7 +102,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
+                                    color: Colors.black.withOpacity(0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -122,7 +122,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
+                          color: Colors.black.withOpacity(0.6),
                           borderRadius: const BorderRadius.vertical(
                               bottom: Radius.circular(16)),
                         ),
@@ -198,7 +198,7 @@ class ManageGalleryScreen extends ConsumerWidget {
     if (confirm == true) {
       try {
         await ref
-            .read(businessRepositoryProvider)
+            .read(postRepositoryProvider)
             .deletePost(businessId, postId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Publicación eliminada con éxito')),
@@ -211,4 +211,3 @@ class ManageGalleryScreen extends ConsumerWidget {
     }
   }
 }
-

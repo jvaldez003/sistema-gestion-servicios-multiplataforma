@@ -3,9 +3,9 @@ import '../../domain/models/post.dart';
 import '../../domain/models/business.dart';
 import 'business_providers.dart';
 import '../../domain/repositories/business_repository.dart';
-
+import '../../domain/repositories/post_repository.dart';
 final globalFeedProvider = StreamProvider<List<BusinessPost>>((ref) {
-  final repo = ref.watch(businessRepositoryProvider);
+  final repo = ref.watch(postRepositoryProvider);
   return repo.getGlobalFeedStream().asyncMap((maps) async {
     final List<BusinessPost> posts = [];
     
@@ -63,19 +63,19 @@ class CommentArgs {
 }
 
 final postCommentsProvider = StreamProvider.family<List<PostComment>, CommentArgs>((ref, args) {
-  final repo = ref.watch(businessRepositoryProvider);
+  final repo = ref.watch(postRepositoryProvider);
   return repo.getCommentsStream(args.businessId, args.postId).map(
     (maps) => maps.map((m) => PostComment.fromMap(m['id'], m)).toList(),
   );
 });
 
 final postInteractionProvider = Provider((ref) {
-  final repo = ref.watch(businessRepositoryProvider);
+  final repo = ref.watch(postRepositoryProvider);
   return PostInteractionNotifier(repo);
 });
 
 class PostInteractionNotifier {
-  final BusinessRepository repo;
+  final PostRepository repo;
    PostInteractionNotifier(this.repo);
 
   Future<void> likePost(String businessId, String postId, String userId) async {

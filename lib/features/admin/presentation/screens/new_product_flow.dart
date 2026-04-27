@@ -98,7 +98,8 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
   Future<void> _publish() async {
     setState(() => _isPublishing = true);
     try {
-      final repo = ref.read(businessRepositoryProvider);
+      final productRepo = ref.read(productRepositoryProvider);
+      final businessRepo = ref.read(businessRepositoryProvider);
       final isUpdating = widget.existingProduct != null;
 
       String finalImageUrl = widget.existingProduct?['imageUrl'] ?? '';
@@ -109,7 +110,7 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
         final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         final path = 'businesses/${widget.businessId}/products/$fileName';
         
-        finalImageUrl = await repo.uploadImage(path, bytes, mimeType);
+        finalImageUrl = await businessRepo.uploadImage(path, bytes, mimeType);
       }
 
       final productData = {
@@ -122,10 +123,10 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
       };
 
       if (isUpdating) {
-        await repo.updateProduct(widget.businessId, widget.existingProduct!['id'], productData);
+        await productRepo.updateProduct(widget.businessId, widget.existingProduct!['id'], productData);
       } else {
         productData['createdAt'] = DateTime.now().toIso8601String();
-        await repo.addProduct(widget.businessId, productData);
+        await productRepo.addProduct(widget.businessId, productData);
       }
 
       if (mounted) {

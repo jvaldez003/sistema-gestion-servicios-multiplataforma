@@ -94,4 +94,25 @@ class FirebaseBookingRepository implements BookingRepository {
         .doc(appointmentId)
         .update({'status': 'cancelled'});
   }
+
+  @override
+  Future<void> rescheduleAppointment(
+    String appointmentId,
+    DateTime newDateTime,
+    String professionalId,
+    String professionalName,
+    List<String> serviceIds,
+    List<String> serviceNames,
+    double totalPrice,
+  ) async {
+    await _firestore.collection('appointments').doc(appointmentId).update({
+      'dateTime': Timestamp.fromDate(newDateTime),
+      'professionalId': professionalId,
+      'professionalName': professionalName,
+      'serviceIds': serviceIds,
+      'serviceNames': serviceNames,
+      'totalPrice': totalPrice,
+      'status': 'confirmed',
+    });
+  }
 }

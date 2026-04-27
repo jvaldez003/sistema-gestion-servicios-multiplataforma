@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/widgets/add_member_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_details_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 
 class TeamManagementScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -33,23 +33,14 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    final teamAsync = ref.watch(businessTeamProvider(widget.businessId));
+    final workRequestsAsync = ref.watch(businessWorkRequestsProvider(widget.businessId));
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('businesses')
-            .doc(widget.businessId)
-            .collection('team')
-            .snapshots(),
-        builder: (context, snapshot) {
-          final members = snapshot.data?.docs ?? [];
-          final activeCount =
-              members.where((m) => m['status'] == 'active').length;
-          final pendingCount =
-              members.where((m) => m['status'] == 'pending').length;
-
-          // Get work requests from the provider
-          final workRequestsAsync = ref.watch(businessWorkRequestsProvider(widget.businessId));
+      body: teamAsync.when(
+        data: (members) {
+          final activeCount = members.where((m) => m['status'] == 'active').length;
           final workRequestsCount = workRequestsAsync.maybeWhen(
             data: (requests) => requests.length,
             orElse: () => 0,
@@ -63,8 +54,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                   padding: const EdgeInsets.fromLTRB(16, 56, 16, 24),
                   decoration: const BoxDecoration(
                     color: Color(0xFFF97316),
-                    borderRadius:
-                        BorderRadius.vertical(bottom: Radius.circular(32)),
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +66,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: Colors.white.withOpacity(0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.arrow_back,
@@ -85,22 +75,18 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           ),
                           const SizedBox(width: 12),
                           Text('Gestión del Equipo',
-                              style: AppTypography.h3
-                                  .copyWith(color: Colors.white)),
+                              style: AppTypography.h3.copyWith(color: Colors.white)),
                         ],
                       ),
                       const SizedBox(height: 24),
                       // Stats Row
                       Row(
                         children: [
-                          _buildHeaderStat(
-                              '${members.length}', 'Total', Colors.white),
+                          _buildHeaderStat('${members.length}', 'Total', Colors.white),
                           const SizedBox(width: 12),
-                          _buildHeaderStat(
-                              '$activeCount', 'Activos hoy', Colors.white),
+                          _buildHeaderStat('$activeCount', 'Activos hoy', Colors.white),
                           const SizedBox(width: 12),
-                          _buildHeaderStat(
-                              '$workRequestsCount', 'Solicitudes', Colors.white,
+                          _buildHeaderStat('$workRequestsCount', 'Solicitudes', Colors.white,
                               badge: workRequestsCount > 0),
                         ],
                       ),
@@ -112,8 +98,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
               // Tab Bar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
@@ -127,7 +112,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 4)
                         ],
                       ),
@@ -155,7 +140,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                               const SizedBox(width: 6),
                               Text('Solicitudes',
                                   style: const TextStyle(fontSize: 12)),
-                              if (pendingCount > 0) ...[
+                              if (workRequestsCount > 0) ...[
                                 const SizedBox(width: 4),
                                 Container(
                                   padding: const EdgeInsets.all(4),
@@ -182,8 +167,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
               // Invite Card
               SliverToBoxAdapter(
                 child: Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
@@ -198,8 +182,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child:
-                            const Icon(Icons.group_add, color: Colors.black54),
+                        child: const Icon(Icons.group_add, color: Colors.black54),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -256,8 +239,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
               // Members List
               if (_tabController.index == 0)
                 SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   sliver: members.isEmpty
                       ? SliverToBoxAdapter(
                           child: Center(
@@ -285,9 +267,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                       : SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final memberDoc = members[index];
-                              final member = memberDoc.data() as Map<String, dynamic>;
-                              member['id'] = memberDoc.id;
+                              final member = members[index];
                               return _buildMemberCard(member);
                             },
                             childCount: members.length,
@@ -332,21 +312,11 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                       ),
                     );
                   },
-                  loading: () => SliverToBoxAdapter(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(48),
-                        child: const CircularProgressIndicator(),
-                      ),
-                    ),
+                  loading: () => const SliverToBoxAdapter(
+                    child: Center(child: Padding(padding: EdgeInsets.all(48), child: CircularProgressIndicator())),
                   ),
                   error: (err, __) => SliverToBoxAdapter(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(48),
-                        child: Text('Error: $err'),
-                      ),
-                    ),
+                    child: Center(child: Padding(padding: EdgeInsets.all(48), child: Text('Error: $err'))),
                   ),
                 )
               else
@@ -356,6 +326,8 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
             ],
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, __) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddMember(),
@@ -408,12 +380,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
 
     if (confirm == true) {
       try {
-        await FirebaseFirestore.instance
-            .collection('businesses')
-            .doc(widget.businessId)
-            .collection('team')
-            .doc(member['id'])
-            .delete();
+        await ref.read(teamRepositoryProvider).removeTeamMember(widget.businessId, member['id']);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Miembro eliminado con éxito')),
@@ -435,7 +402,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Stack(
@@ -451,7 +418,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           fontSize: 20)),
                   Text(label,
                       style: TextStyle(
-                          color: textColor.withValues(alpha: 0.8), fontSize: 11)),
+                          color: textColor.withOpacity(0.8), fontSize: 11)),
                 ],
               ),
             ),
@@ -721,18 +688,19 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                   onPressed: () async {
                     try {
                       await ref
-                          .read(rejectWorkRequestProvider(
-                              (widget.businessId, requestId))
-                              .future);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Solicitud rechazada')),
-                      );
+                          .read(teamRepositoryProvider)
+                          .rejectWorkRequest(widget.businessId, requestId);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Solicitud rechazada')),
+                        );
+                      }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Error: $e')),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
                     }
                   },
                   style: OutlinedButton.styleFrom(
@@ -752,18 +720,19 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                   onPressed: () async {
                     try {
                       await ref
-                          .read(acceptWorkRequestProvider(
-                              (widget.businessId, requestId))
-                              .future);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('¡Solicitud aceptada! El usuario se ha agregado al equipo.')),
-                      );
+                          .read(teamRepositoryProvider)
+                          .acceptWorkRequest(widget.businessId, requestId);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('¡Solicitud aceptada! El usuario se ha agregado al equipo.')),
+                        );
+                      }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Error: $e')),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -784,5 +753,3 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
     );
   }
 }
-
-

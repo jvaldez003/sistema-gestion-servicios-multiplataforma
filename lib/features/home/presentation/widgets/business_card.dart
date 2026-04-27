@@ -22,7 +22,7 @@ class BusinessCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -41,7 +41,7 @@ class BusinessCard extends StatelessWidget {
                     backgroundImage: business.avatarUrl.isNotEmpty
                         ? CachedNetworkImageProvider(business.avatarUrl)
                         : null,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
                     child: business.avatarUrl.isEmpty
                         ? Text(
                             business.name.substring(0, 1).toUpperCase(),
@@ -193,7 +193,7 @@ class BusinessCard extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withValues(alpha: 0.6),
+                            Colors.black.withOpacity(0.6),
                           ],
                         ),
                       ),
@@ -232,7 +232,7 @@ class BusinessCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: Colors.black.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -279,7 +279,7 @@ class BusinessCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: index == 0
                                         ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.5),
+                                        : Colors.white.withOpacity(0.5),
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 )),
@@ -294,7 +294,7 @@ class BusinessCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: Colors.black.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -338,7 +338,7 @@ class BusinessCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.08),
+                                color: AppColors.primary.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(

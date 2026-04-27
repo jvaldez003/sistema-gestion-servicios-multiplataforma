@@ -151,7 +151,7 @@ class ManageProductsScreen extends ConsumerWidget {
     if (confirm == true) {
       try {
         await ref
-            .read(businessRepositoryProvider)
+            .read(productRepositoryProvider)
             .deleteProduct(businessId, productId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Producto eliminado con éxito')),

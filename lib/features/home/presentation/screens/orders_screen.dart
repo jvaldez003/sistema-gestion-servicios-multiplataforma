@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/appointment.dart';
 import '../providers/booking_providers.dart';
+import '../providers/orders_notifier.dart';
 
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});
@@ -30,7 +31,6 @@ class OrdersScreen extends ConsumerWidget {
       ),
       body: appointmentsAsync.when(
         data: (appointments) {
-          // Solo mostramos citas que NO estén canceladas (son las "compras" válidas)
           final orders = appointments
               .where((a) => a.status != 'cancelled')
               .toList()
@@ -40,28 +40,14 @@ class OrdersScreen extends ConsumerWidget {
             return _buildEmptyState(context, ref);
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          return ListView.builder(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: orders.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (context, index) {
-              return _OrderCard(appointment: orders[index]);
-            },
+            itemBuilder: (context, index) => _OrderCard(appointment: orders[index]),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-              const SizedBox(height: 16),
-              Text('Error al cargar pedidos', style: AppTypography.titleMedium),
-              const SizedBox(height: 8),
-              Text('$e', style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
-            ],
-          ),
-        ),
+        error: (err, _) => Center(child: Text('Error: $err')),
       ),
     );
   }
@@ -74,13 +60,13 @@ class OrdersScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+              color: const Color(0xFF6366F1).withOpacity(0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.shopping_bag_outlined,
               color: Color(0xFF6366F1),
-              size: 64,
+              size: 56,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -92,25 +78,10 @@ class OrdersScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'Aquí aparecerá el historial de tus compras de productos y servicios.',
+              'Cuando reserves un servicio o compres un producto aparecerá aquí.',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          ElevatedButton(
-            onPressed: () {
-              // Cambia al tab Explorar (índice 0) y regresa al HomeScreen
-              ref.read(homeTabIndexProvider.notifier).state = 0;
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: const Text('Ir a explorar', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -118,72 +89,38 @@ class OrdersScreen extends ConsumerWidget {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends ConsumerWidget {
   final Appointment appointment;
 
   const _OrderCard({required this.appointment});
 
-  Color get _statusColor {
-    switch (appointment.status) {
-      case 'confirmed':
-        return const Color(0xFF3B82F6);
-      case 'completed':
-        return const Color(0xFF10B981);
-      case 'pending':
-        return const Color(0xFFF59E0B);
-      default:
-        return AppColors.textSecondary;
-    }
-  }
-
-  String get _statusLabel {
-    switch (appointment.status) {
-      case 'confirmed':
-        return 'Confirmado';
-      case 'completed':
-        return 'Completado';
-      case 'pending':
-        return 'Pendiente';
-      default:
-        return appointment.status;
-    }
-  }
-
-  IconData get _statusIcon {
-    switch (appointment.status) {
-      case 'confirmed':
-        return Icons.check_circle_outline_rounded;
-      case 'completed':
-        return Icons.task_alt_rounded;
-      case 'pending':
-        return Icons.hourglass_empty_rounded;
-      default:
-        return Icons.info_outline;
-    }
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statusConfig = _getStatusConfig(appointment.status);
+    final _statusColor = statusConfig.color;
+
     return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header: tienda + status ───────────────────────────
+          // ── Header: Negocio + Status ──────────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: _statusColor.withValues(alpha: 0.06),
+              color: _statusColor.withOpacity(0.06),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -194,38 +131,42 @@ class _OrderCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
+                    color: AppColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.storefront_outlined,
-                      color: AppColors.primary, size: 20),
+                      color: AppColors.primary, size: 18),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     appointment.businessName,
                     style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.2,
                     ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha: 0.12),
+                    color: _statusColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_statusIcon, color: _statusColor, size: 14),
+                      Icon(statusConfig.icon, color: _statusColor, size: 12),
                       const SizedBox(width: 4),
                       Text(
-                        _statusLabel,
-                        style: AppTypography.bodySmall.copyWith(
+                        statusConfig.label,
+                        style: TextStyle(
                           color: _statusColor,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -235,46 +176,54 @@ class _OrderCard extends StatelessWidget {
             ),
           ),
 
-          // ── Servicios solicitados ─────────────────────────────
+          // ── Body: Servicios ──────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: Text(
-              'Servicios solicitados',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          ...appointment.serviceNames.map(
-            (name) => Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w500,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.content_cut_rounded,
+                        size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Servicios',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: appointment.serviceNames.map((name) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        name,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 12),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
           // ── Footer: precio + fecha ────────────────────────────
@@ -288,7 +237,7 @@ class _OrderCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        color: const Color(0xFF10B981).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.attach_money_rounded,
@@ -323,16 +272,102 @@ class _OrderCard extends StatelessWidget {
               ],
             ),
           ),
+
+          if (appointment.status == 'pending' || appointment.status == 'confirmed') ...[
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _handleCancel(context, ref),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Cancelar', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => ref.read(ordersControllerProvider.notifier).startRescheduling(context, appointment),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                      ),
+                      child: const Text('Reagendar', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
+  Future<void> _handleCancel(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cancelar cita?'),
+        content: const Text('¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, volver'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(ordersControllerProvider.notifier).cancelAppointment(appointment.id!);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cita cancelada correctamente')),
+        );
+      }
+    }
+  }
+
   String _formatDate(DateTime dt) {
-    final months = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
-    ];
+    final months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
+
+  _StatusConfig _getStatusConfig(String status) {
+    switch (status) {
+      case 'pending':
+        return _StatusConfig(label: 'PENDIENTE', icon: Icons.access_time_rounded, color: const Color(0xFFF59E0B));
+      case 'confirmed':
+        return _StatusConfig(label: 'CONFIRMADO', icon: Icons.check_circle_rounded, color: const Color(0xFF6366F1));
+      case 'completed':
+        return _StatusConfig(label: 'COMPLETADO', icon: Icons.task_alt_rounded, color: const Color(0xFF10B981));
+      case 'cancelled':
+        return _StatusConfig(label: 'CANCELADO', icon: Icons.cancel_rounded, color: AppColors.error);
+      default:
+        return _StatusConfig(label: 'DESCONOCIDO', icon: Icons.help_outline_rounded, color: Colors.grey);
+    }
+  }
+}
+
+class _StatusConfig {
+  final String label;
+  final IconData icon;
+  final Color color;
+  _StatusConfig({required this.label, required this.icon, required this.color});
 }
