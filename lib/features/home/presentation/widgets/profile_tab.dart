@@ -91,7 +91,7 @@ class ProfileTab extends ConsumerWidget {
                 context,
                 icon: Icons.person_outline,
                 title: 'Datos personales',
-                subtitle: user?.name ?? 'Nombre no configurado',
+                subtitle: '${user?.name ?? 'Nombre no configurado'} | ${user?.phoneNumber ?? 'Sin teléfono'}',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(

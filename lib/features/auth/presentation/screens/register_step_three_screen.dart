@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/registration_provider.dart';
+import '../providers/auth_providers.dart';
 
 class RegisterStepThreeScreen extends ConsumerStatefulWidget {
   const RegisterStepThreeScreen({super.key});
@@ -31,6 +32,14 @@ class _RegisterStepThreeScreenState
 
     final authState = ref.read(authNotifierProvider);
     if (authState.status == AuthStatus.authenticated && mounted) {
+      if (authState.user != null) {
+        await ref.read(userRepositoryProvider).updateUserProfile(
+          authState.user!.id,
+          name: registrationData.name,
+          phoneNumber: registrationData.phoneNumber,
+        );
+      }
+
       // Reset registration data
       ref.read(registrationProvider.notifier).reset();
 

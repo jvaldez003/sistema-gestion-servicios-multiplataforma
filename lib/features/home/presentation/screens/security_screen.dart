@@ -12,8 +12,6 @@ class SecurityScreen extends ConsumerStatefulWidget {
 }
 
 class _SecurityScreenState extends ConsumerState<SecurityScreen> {
-  bool _incognitoMode = false;
-
   Future<void> _changePassword() async {
     final currentCtrl = TextEditingController();
     final newCtrl = TextEditingController();
@@ -172,9 +170,9 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          // ── Acceso ────────────────────────────────────────────
+          // ── Seguridad y Privacidad ────────────────────────────────────
           _buildSecurityGroup(
-            'Acceso',
+            'Seguridad y Privacidad',
             [
               _buildSecurityItem(
                 context,
@@ -182,35 +180,6 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                 title: 'Cambiar contraseña',
                 subtitle: 'Actualiza tu clave de acceso',
                 onTap: _changePassword,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // ── Privacidad ────────────────────────────────────────
-          _buildSecurityGroup(
-            'Privacidad',
-            [
-              _buildSecurityItem(
-                context,
-                icon: Icons.visibility_off_outlined,
-                title: 'Modo incógnito',
-                subtitle: 'Oculta tu actividad reciente',
-                trailing: Switch(
-                  value: _incognitoMode,
-                  activeColor: AppColors.primary,
-                  onChanged: (val) {
-                    setState(() => _incognitoMode = val);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(val ? 'Modo incógnito activado' : 'Modo incógnito desactivado'),
-                        backgroundColor: val ? AppColors.primary : AppColors.textSecondary,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
-                  },
-                ),
               ),
               _buildSecurityItem(
                 context,
