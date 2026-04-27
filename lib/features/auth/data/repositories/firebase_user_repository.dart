@@ -31,6 +31,8 @@ class FirebaseUserRepository implements UserRepository {
         id: doc.id,
         email: data['email'] ?? '',
         name: data['name'],
+        phoneNumber: data['phoneNumber'],
+        photoUrl: data['photoUrl'],
         points: data['points'] ?? 0,
         favoriteIds: List<String>.from(data['favoriteIds'] ?? []),
       );
@@ -42,5 +44,17 @@ class FirebaseUserRepository implements UserRepository {
     await _firestore.collection('users').doc(userId).update({
       'points': FieldValue.increment(points),
     });
+  }
+
+  @override
+  Future<void> updateUserProfile(String userId, {String? name, String? email, String? photoUrl, String? phoneNumber}) async {
+    final Map<String, dynamic> data = {};
+    if (name != null) data['name'] = name;
+    if (email != null) data['email'] = email;
+    if (photoUrl != null) data['photoUrl'] = photoUrl;
+    if (phoneNumber != null) data['phoneNumber'] = phoneNumber;
+    if (data.isNotEmpty) {
+      await _firestore.collection('users').doc(userId).set(data, SetOptions(merge: true));
+    }
   }
 }

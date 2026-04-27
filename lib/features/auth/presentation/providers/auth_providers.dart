@@ -21,5 +21,18 @@ final userProfileProvider = StreamProvider<AppUser?>((ref) {
   final authUser = ref.watch(authStateProvider).value;
   if (authUser == null) return Stream.value(null);
   
-  return ref.watch(userRepositoryProvider).getUserStream(authUser.id);
+  return ref.watch(userRepositoryProvider).getUserStream(authUser.id).map((firestoreUser) {
+    if (firestoreUser != null) {
+      return AppUser(
+        id: firestoreUser.id,
+        email: firestoreUser.email.isNotEmpty ? firestoreUser.email : authUser.email,
+        name: firestoreUser.name ?? authUser.name,
+        photoUrl: firestoreUser.photoUrl ?? authUser.photoUrl,
+        phoneNumber: firestoreUser.phoneNumber ?? authUser.phoneNumber,
+        points: firestoreUser.points,
+        favoriteIds: firestoreUser.favoriteIds,
+      );
+    }
+    return authUser;
+  });
 });

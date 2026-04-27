@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../providers/booking_providers.dart';
 import '../widgets/appointments_tab.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/promotional_banner.dart';
@@ -14,22 +15,22 @@ import '../widgets/profile_tab.dart';
 import '../widgets/post_card.dart';
 import '../../../../core/widgets/app_cached_image.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = ref.watch(homeTabIndexProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: IndexedStack(
-        index: _selectedIndex,
+        index: selectedIndex,
         children: [
           const ExplorarTab(),
           const AppointmentsTab(),
@@ -38,8 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: selectedIndex,
+        onTap: (index) => ref.read(homeTabIndexProvider.notifier).state = index,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,

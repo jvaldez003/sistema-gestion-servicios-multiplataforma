@@ -646,15 +646,18 @@ class ProfileTab extends ConsumerWidget {
           );
         }
 
+        // Solo mostramos máximo 3 en el cuadro de favoritos del perfil
+        final preview = businesses.take(3).toList();
+
         return SizedBox(
-          height: 180, // Height for compact cards
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            itemCount: businesses.length,
+            itemCount: preview.length,
             itemBuilder: (context, index) {
-              final business = businesses[index];
+              final business = preview[index];
               return BusinessSmallCard(business: business);
             },
           ),

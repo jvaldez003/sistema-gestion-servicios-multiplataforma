@@ -4,6 +4,9 @@ import '../../data/repositories/firebase_booking_repository.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/models/appointment.dart';
 
+/// Controls which tab is selected in HomeScreen (0=Explorar, 1=Citas, 2=Puntos, 3=Perfil)
+final homeTabIndexProvider = StateProvider<int>((ref) => 0);
+
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return FirebaseBookingRepository();
 });
