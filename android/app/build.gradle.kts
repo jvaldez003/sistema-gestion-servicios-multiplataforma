@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jvaldez.flowserv"
+    namespace = "com.example.sistema_gestion_servicios_multiplataforma"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.jvaldez.flowserv"
+        applicationId = "com.example.sistema_gestion_servicios_multiplataforma"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
