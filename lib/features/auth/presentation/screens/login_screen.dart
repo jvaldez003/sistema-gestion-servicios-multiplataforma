@@ -123,15 +123,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.handyman_rounded,
-                          size: 60,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          'FlowServ',
-                          style: AppTypography.h1.copyWith(color: Colors.white),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            'assets/logo.png',
+                            height: 120,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ],
                     ),

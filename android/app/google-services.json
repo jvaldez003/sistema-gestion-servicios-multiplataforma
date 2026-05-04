@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "178817144351",
+    "project_id": "sistema-gestion-servicio-4c747",
+    "storage_bucket": "sistema-gestion-servicio-4c747.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178817144351:android:30a93990e68784f32ee72a",
+        "android_client_info": {
+          "package_name": "com.jvaldez.flowserv"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "178817144351-fuvok00rvf9k5icsqg0ic7uf0ttshim3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jvaldez.flowserv",
+            "certificate_hash": "850aac649b6f5f181836b678812f7ae161a8a49a"
+          }
+        },
+        {
+          "client_id": "178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYVDQx2ki7ugY22sRWrD55S7cH2lMdcIs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "178817144351-h3l7mlji4bepcuseps6vb0p0s8if4917.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jvaldez.flowserv"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

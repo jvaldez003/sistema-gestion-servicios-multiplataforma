@@ -1,4 +1,4 @@
-package com.example.sistema_gestion_servicios_multiplataforma
+package com.jvaldez.flowserv
 
 import io.flutter.embedding.android.FlutterActivity
 

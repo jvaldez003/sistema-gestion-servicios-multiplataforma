@@ -10,13 +10,21 @@ class FirebaseAuthRepository implements AuthRepository {
 
   FirebaseAuthRepository() {
     String? clientId;
+    String? serverClientId;
+
     if (kIsWeb) {
       clientId = '178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com';
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       clientId = '178817144351-h3l7mlji4bepcuseps6vb0p0s8if4917.apps.googleusercontent.com';
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      serverClientId = '178817144351-4q7cmog0nmjusb9dcrn6ke3p19mqavgl.apps.googleusercontent.com';
     }
-    // For Android, clientId is null, it uses google-services.json
-    _googleSignIn = GoogleSignIn(clientId: clientId);
+
+    // Pass the Web Client ID as serverClientId for Android so it doesn't rely on google-services.json
+    _googleSignIn = GoogleSignIn(
+      clientId: clientId,
+      serverClientId: serverClientId,
+    );
   }
 
   AppUser? _userFromFirebase(User? user) {

@@ -106,19 +106,11 @@ class ExplorarTab extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 24),
-                            const SizedBox(width: 6),
-                            Text(
-                              'FlowServ',
-                              style: AppTypography.h3.copyWith(
-                                color: AppColors.primary, 
-                                fontWeight: FontWeight.w900, 
-                                letterSpacing: -0.5
-                              ),
-                            ),
-                          ],
+                        Image.asset(
+                          'assets/logo.png',
+                          height: 50,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerLeft,
                         ),
                         const SizedBox(height: 8),
                         RichText(

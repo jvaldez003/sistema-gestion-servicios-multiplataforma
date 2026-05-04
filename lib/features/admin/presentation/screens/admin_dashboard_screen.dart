@@ -76,17 +76,20 @@ class AdminDashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.bolt,
-                              color: Colors.white, size: 16),
+                          child: Image.asset(
+                            'assets/logo.png',
+                            height: 16,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'FlowServ Admin',
+                          'Admin',
                           style: AppTypography.bodySmall.copyWith(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
