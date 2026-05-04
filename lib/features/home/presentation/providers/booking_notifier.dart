@@ -91,10 +91,19 @@ class BookingNotifier extends StateNotifier<BookingState> {
     state = BookingState();
   }
 
-  void initializeForRescheduling(Appointment appointment, List<Service> availableServices) {
-    final selectedServices = availableServices
-        .where((s) => appointment.serviceIds.contains(s.id))
-        .toList();
+  void initializeForRescheduling(Appointment appointment) {
+    // We create dummy services to satisfy the state, so we don't need to fetch the real ones
+    // if the user just wants to reschedule the date/time.
+    final selectedServices = List.generate(
+      appointment.serviceIds.length,
+      (i) => Service(
+        id: appointment.serviceIds[i],
+        name: appointment.serviceNames[i],
+        description: '',
+        price: appointment.serviceIds.isNotEmpty ? (appointment.totalPrice / appointment.serviceIds.length) : 0,
+        duration: '',
+      ),
+    );
     
     state = BookingState(
       selectedServices: selectedServices,
@@ -104,6 +113,18 @@ class BookingNotifier extends StateNotifier<BookingState> {
       professionalName: appointment.professionalName,
       currentStep: 1, 
     );
+  }
+
+  Future<bool> cancelAppointment(String appointmentId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.cancelAppointment(appointmentId);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
   }
 
   Future<bool> submitBooking({

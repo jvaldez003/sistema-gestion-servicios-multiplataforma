@@ -47,7 +47,7 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
       final services = await _serviceRepository.getServicesStream(appointment.businessId).first;
 
       // 3. Initialize booking state
-      _ref.read(bookingStateProvider.notifier).initializeForRescheduling(appointment, services);
+      _ref.read(bookingStateProvider.notifier).initializeForRescheduling(appointment);
 
       if (context.mounted) {
         Navigator.pop(context); // Close loading

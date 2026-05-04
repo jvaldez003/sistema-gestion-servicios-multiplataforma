@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -8,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/appointment.dart';
 import '../providers/booking_providers.dart';
+import '../providers/booking_notifier.dart';
 
 class AppointmentsTab extends ConsumerStatefulWidget {
   const AppointmentsTab({super.key});
@@ -533,10 +535,86 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               ],
             ),
           ),
-          _buildStatusBadge(appointment.status),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatusBadge(appointment.status),
+              if (appointment.status == 'pending' || appointment.status == 'confirmed') ...[
+                const SizedBox(height: 8),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textSecondary),
+                  padding: EdgeInsets.zero,
+                  onSelected: (value) {
+                    if (value == 'cancel') {
+                      _confirmCancellation(context, appointment.id!);
+                    } else if (value == 'reschedule') {
+                      _rescheduleAppointment(context, appointment);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'reschedule',
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_month, size: 18, color: AppColors.primary),
+                          SizedBox(width: 8),
+                          Text('Reagendar'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'cancel',
+                      child: Row(
+                        children: [
+                          Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Cancelar cita', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  void _confirmCancellation(BuildContext context, String appointmentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cancelar cita?'),
+        content: const Text('¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No, mantener'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // close dialog
+              final success = await ref.read(bookingStateProvider.notifier).cancelAppointment(appointmentId);
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cita cancelada correctamente'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Sí, cancelar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _rescheduleAppointment(BuildContext context, Appointment appointment) {
+    ref.read(bookingStateProvider.notifier).initializeForRescheduling(appointment);
+    context.push('/business/${appointment.businessId}/booking', extra: {
+      'appointment': appointment,
+    });
   }
 
   Widget _buildStatusBadge(String status) {

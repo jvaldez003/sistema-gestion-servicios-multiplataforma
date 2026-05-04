@@ -7,6 +7,7 @@ import '../../../features/home/presentation/screens/home_screen.dart';
 import '../../../features/home/presentation/screens/business_profile_screen.dart';
 import '../../../features/home/presentation/screens/booking_flow_screen.dart';
 import '../../../features/home/domain/models/business.dart';
+import '../../../features/home/domain/models/appointment.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
@@ -45,8 +46,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'booking',
             builder: (context, state) {
-              final business = state.extra as Business?;
-              return BookingFlowScreen(business: business ?? Business(id: state.pathParameters['id']!, name: '', category: '', description: '', imageUrl: '', avatarUrl: '', rating: 0.0, totalReviews: 0, distance: 0.0, isVerified: false, isTop: false, startingPrice: 0.0, tags: [], likes: 0, comments: 0, professionalCount: 0));
+              Business? business;
+              Appointment? appointment;
+              
+              if (state.extra is Business) {
+                business = state.extra as Business;
+              } else if (state.extra is Map<String, dynamic>) {
+                final extraMap = state.extra as Map<String, dynamic>;
+                business = extraMap['business'] as Business?;
+                appointment = extraMap['appointment'] as Appointment?;
+              }
+              
+              return BookingFlowScreen(
+                business: business ?? Business(
+                  id: state.pathParameters['id']!, 
+                  name: '', category: '', description: '', imageUrl: '', avatarUrl: '', 
+                  rating: 0.0, totalReviews: 0, distance: 0.0, isVerified: false, isTop: false, 
+                  startingPrice: 0.0, tags: [], likes: 0, comments: 0, professionalCount: 0
+                ),
+                appointmentToReschedule: appointment,
+              );
             },
           ),
         ],

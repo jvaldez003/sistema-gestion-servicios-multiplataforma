@@ -409,12 +409,30 @@ class _TimeGrid extends ConsumerWidget {
         final selectedMember = team.firstWhere((m) => (m['userId'] ?? m['id']) == bookingState.professionalId, orElse: () => {});
         final availableHours = (selectedMember['workingHours'] as List?)?.cast<String>() ?? ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
+        final now = DateTime.now();
+        final isToday = bookingState.selectedDate!.year == now.year &&
+            bookingState.selectedDate!.month == now.month &&
+            bookingState.selectedDate!.day == now.day;
+
         return Wrap(
           spacing: 12,
           runSpacing: 8,
           children: availableHours.map((time) {
             final isSelected = bookingState.selectedTime == time;
-            final isOccupied = occupiedTimes.contains(time);
+            bool isOccupied = occupiedTimes.contains(time);
+            
+            if (isToday && !isOccupied) {
+              final parts = time.split(':');
+              if (parts.length == 2) {
+                final hour = int.tryParse(parts[0]) ?? 0;
+                final minute = int.tryParse(parts[1]) ?? 0;
+                final timeDateTime = DateTime(now.year, now.month, now.day, hour, minute);
+                if (timeDateTime.isBefore(now)) {
+                  isOccupied = true;
+                }
+              }
+            }
+
             return ChoiceChip(
               label: Text(time, style: TextStyle(color: isOccupied ? Colors.grey : (isSelected ? Colors.white : AppColors.textPrimary))),
               selected: isSelected,
