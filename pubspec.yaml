@@ -22,10 +22,21 @@ dependencies:
   go_router: ^14.7.2
   firebase_storage: ^13.2.0
   local_auth: ^3.0.1
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_timezone: ^5.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo.png"
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

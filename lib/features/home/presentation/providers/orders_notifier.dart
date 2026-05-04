@@ -9,6 +9,7 @@ import '../providers/booking_providers.dart';
 import '../providers/booking_notifier.dart';
 import '../providers/business_providers.dart';
 import '../screens/booking_flow_screen.dart';
+import '../../../../core/services/notification_service.dart';
 
 class OrdersController extends StateNotifier<AsyncValue<void>> {
   final BookingRepository _bookingRepository;
@@ -22,6 +23,7 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _bookingRepository.cancelAppointment(appointmentId);
+      await NotificationService().cancelNotification(appointmentId.hashCode);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

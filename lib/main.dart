@@ -9,12 +9,15 @@ import 'core/theme/app_typography.dart';
 
 import 'core/navigation/router.dart';
 
+import 'core/services/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es', null);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await NotificationService().initialize();
   runApp(
     const ProviderScope(
       child: MyApp(),

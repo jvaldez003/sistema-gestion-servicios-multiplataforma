@@ -16,6 +16,9 @@ import '../widgets/profile_tab.dart';
 import '../widgets/post_card.dart';
 import '../../../../core/widgets/app_cached_image.dart';
 import '../../domain/models/business.dart';
+import '../widgets/business_search_delegate.dart';
+
+import '../providers/notification_providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(appointmentNotificationSyncProvider);
     final selectedIndex = ref.watch(homeTabIndexProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -138,7 +142,16 @@ class ExplorarTab extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  _buildHeaderIcon(Icons.search_rounded),
+                  _buildHeaderIcon(
+                    Icons.search_rounded,
+                    onTap: () {
+                      final businesses = businessesAsync.valueOrNull ?? [];
+                      showSearch(
+                        context: context,
+                        delegate: BusinessSearchDelegate(businesses: businesses),
+                      );
+                    },
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   _buildHeaderIcon(Icons.notifications_none_rounded, showBadge: true),
                 ],
@@ -286,9 +299,11 @@ class ExplorarTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderIcon(IconData icon, {bool showBadge = false}) {
-    return Container(
-      width: 44,
+  Widget _buildHeaderIcon(IconData icon, {bool showBadge = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
       height: 44,
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
@@ -314,7 +329,7 @@ class ExplorarTab extends ConsumerWidget {
             ),
         ],
       ),
-    );
+    ));
   }
 }
 
