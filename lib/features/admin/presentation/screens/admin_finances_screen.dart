@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import 'package:intl/intl.dart';
 
 class AdminFinancesScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -10,7 +9,8 @@ class AdminFinancesScreen extends ConsumerStatefulWidget {
   const AdminFinancesScreen({super.key, required this.businessId});
 
   @override
-  ConsumerState<AdminFinancesScreen> createState() => _AdminFinancesScreenState();
+  ConsumerState<AdminFinancesScreen> createState() =>
+      _AdminFinancesScreenState();
 }
 
 class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
@@ -70,7 +70,8 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
                 color: isSelected ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                  color:
+                      isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
                 ),
               ),
               child: Text(
@@ -232,11 +233,17 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildPaymentCard('Efectivo', '0%', const Color(0xFF10B981))),
+            Expanded(
+                child: _buildPaymentCard(
+                    'Efectivo', '0%', const Color(0xFF10B981))),
             const SizedBox(width: 16),
-            Expanded(child: _buildPaymentCard('Tarjeta', '0%', const Color(0xFF3B82F6))),
+            Expanded(
+                child: _buildPaymentCard(
+                    'Tarjeta', '0%', const Color(0xFF3B82F6))),
             const SizedBox(width: 16),
-            Expanded(child: _buildPaymentCard('Transf.', '0%', const Color(0xFFF59E0B))),
+            Expanded(
+                child: _buildPaymentCard(
+                    'Transf.', '0%', const Color(0xFFF59E0B))),
           ],
         ),
       ],
@@ -261,12 +268,14 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           const SizedBox(height: 8),
           Text(
             percentage,
-            style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+            style:
+                AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+            style: AppTypography.bodySmall
+                .copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -290,7 +299,8 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
             child: Center(
               child: Text(
                 'No hay transacciones recientes',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.textSecondary),
               ),
             ),
           )
@@ -308,12 +318,18 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isPositive ? const Color(0xFFE0F2FE) : const Color(0xFFFEE2E2),
+                      color: isPositive
+                          ? const Color(0xFFE0F2FE)
+                          : const Color(0xFFFEE2E2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      isPositive ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                      color: isPositive ? const Color(0xFF0284C7) : const Color(0xFFEF4444),
+                      isPositive
+                          ? Icons.arrow_downward_rounded
+                          : Icons.arrow_upward_rounded,
+                      color: isPositive
+                          ? const Color(0xFF0284C7)
+                          : const Color(0xFFEF4444),
                       size: 20,
                     ),
                   ),
@@ -324,11 +340,13 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
                       children: [
                         Text(
                           t['title']!,
-                          style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyLarge
+                              .copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '${t['method']} • ${t['time']}',
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                          style: AppTypography.bodySmall
+                              .copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -337,7 +355,9 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
                     t['amount']!,
                     style: AppTypography.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: isPositive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                     ),
                   ),
                 ],

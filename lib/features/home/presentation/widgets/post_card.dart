@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/post.dart';
 import '../providers/post_providers.dart';
@@ -24,7 +23,8 @@ class PostCard extends ConsumerStatefulWidget {
   ConsumerState<PostCard> createState() => _PostCardState();
 }
 
-class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMixin {
+class _PostCardState extends ConsumerState<PostCard>
+    with TickerProviderStateMixin {
   late AnimationController _likeAnimController;
   late Animation<double> _likeAnimScale;
 
@@ -45,8 +45,14 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
       duration: const Duration(milliseconds: 300),
     );
     _likeAnimScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: 50),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 1.3)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 50),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.3, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: 50),
     ]).animate(_likeAnimController);
 
     // Animation for the big heart overlay
@@ -55,23 +61,35 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
       duration: const Duration(milliseconds: 800),
     );
     _bigHeartScale = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.2).chain(CurveTween(curve: Curves.elasticOut)), weight: 40),
-      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 20),
+      TweenSequenceItem(
+          tween: Tween(begin: 0.0, end: 1.2)
+              .chain(CurveTween(curve: Curves.elasticOut)),
+          weight: 40),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.2, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 20),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 20), // hold
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.5), weight: 20), // expand while fading
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 1.5),
+          weight: 20), // expand while fading
     ]).animate(_bigHeartAnimController);
 
     _bigHeartOpacity = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 70),
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeOut)), weight: 20),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 0.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 20),
     ]).animate(_bigHeartAnimController);
   }
 
   @override
   void didUpdateWidget(PostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.post.likedByUsers.contains(widget.currentUserId) != oldWidget.post.likedByUsers.contains(oldWidget.currentUserId)) {
+    if (widget.post.likedByUsers.contains(widget.currentUserId) !=
+        oldWidget.post.likedByUsers.contains(oldWidget.currentUserId)) {
       _isLikedLocal = widget.post.likedByUsers.contains(widget.currentUserId);
     }
   }
@@ -88,7 +106,9 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
       _likeAnimController.forward(from: 0.0);
     }
     setState(() => _isLikedLocal = !_isLikedLocal);
-    ref.read(postInteractionProvider).likePost(widget.post.businessId, widget.post.id, widget.currentUserId);
+    ref
+        .read(postInteractionProvider)
+        .likePost(widget.post.businessId, widget.post.id, widget.currentUserId);
   }
 
   void _handleDoubleTapLike() {
@@ -121,11 +141,14 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => context.push('/business/${widget.post.businessId}'),
+                  onTap: () =>
+                      context.push('/business/${widget.post.businessId}'),
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2), // Ring around avatar
+                      border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                          width: 2), // Ring around avatar
                     ),
                     padding: const EdgeInsets.all(2),
                     child: CircleAvatar(
@@ -136,24 +159,29 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
                               imageUrl: widget.post.businessAvatar,
                               borderRadius: BorderRadius.circular(16),
                             )
-                          : const Icon(Icons.store, color: AppColors.primary, size: 16),
+                          : const Icon(Icons.store,
+                              color: AppColors.primary, size: 16),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => context.push('/business/${widget.post.businessId}'),
+                    onTap: () =>
+                        context.push('/business/${widget.post.businessId}'),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.post.businessName,
-                          style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyMedium
+                              .copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          DateFormat('d MMM', 'es').format(widget.post.createdAt),
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          DateFormat('d MMM', 'es')
+                              .format(widget.post.createdAt),
+                          style: const TextStyle(
+                              color: AppColors.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -186,7 +214,8 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
                   AnimatedBuilder(
                     animation: _bigHeartAnimController,
                     builder: (context, child) {
-                      if (_bigHeartAnimController.value == 0.0 || _bigHeartAnimController.value == 1.0) {
+                      if (_bigHeartAnimController.value == 0.0 ||
+                          _bigHeartAnimController.value == 1.0) {
                         return const SizedBox.shrink();
                       }
                       return Transform.scale(
@@ -197,7 +226,12 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
                             Icons.favorite_rounded,
                             color: Colors.white,
                             size: 100,
-                            shadows: [Shadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10))],
+                            shadows: [
+                              Shadow(
+                                  color: Colors.black26,
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10))
+                            ],
                           ),
                         ),
                       );
@@ -240,7 +274,8 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 '${widget.post.likesCount} me gusta',
-                style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.bodyMedium
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
             ),
 
@@ -249,7 +284,8 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: RichText(
               text: TextSpan(
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.textPrimary),
                 children: [
                   TextSpan(
                     text: '${widget.post.businessName} ',
@@ -271,7 +307,8 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
                 onTap: () => _showComments(context),
                 child: Text(
                   'Ver los ${widget.post.commentsCount} comentarios',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 13),
                 ),
               ),
             ),
@@ -280,12 +317,14 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: OutlinedButton(
-              onPressed: () => context.push('/business/${widget.post.businessId}/booking'),
+              onPressed: () =>
+                  context.push('/business/${widget.post.businessId}/booking'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
                 minimumSize: const Size(double.infinity, 40),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text(
                 'Reservar Cita',
@@ -293,7 +332,7 @@ class _PostCardState extends ConsumerState<PostCard> with TickerProviderStateMix
               ),
             ),
           ),
-          
+
           // Subtle divider between posts
           Container(height: 1, color: AppColors.border.withOpacity(0.5)),
         ],
@@ -326,7 +365,9 @@ class _AnimatedLikeButton extends StatelessWidget {
             return Transform.scale(
               scale: scaleAnimation.value,
               child: Icon(
-                isLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                isLiked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_outline_rounded,
                 color: isLiked ? AppColors.error : AppColors.textPrimary,
                 size: 26,
               ),

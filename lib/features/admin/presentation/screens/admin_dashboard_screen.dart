@@ -1161,31 +1161,29 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   Widget _buildSmallActionButton(
       IconData icon, String text, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: const Color(0xFFC084FC)),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(text,
-                    style:
-                        const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis),
-              ),
-              const Icon(Icons.chevron_right,
-                  size: 12, color: AppColors.textSecondary),
-            ],
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: const Color(0xFFC084FC)),
+            const SizedBox(width: 6),
+            Text(text,
+                style:
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right,
+                size: 12, color: AppColors.textSecondary),
+          ],
         ),
       ),
     );
