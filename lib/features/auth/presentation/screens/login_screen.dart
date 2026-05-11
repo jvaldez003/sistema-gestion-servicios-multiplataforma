@@ -37,8 +37,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text.trim(),
           );
 
+      if (!mounted) return;
       final authState = ref.read(authNotifierProvider);
-      if (authState.status == AuthStatus.error && mounted) {
+      if (authState.status == AuthStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authState.errorMessage ?? 'Error al iniciar sesión'),
@@ -52,8 +53,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _handleGoogleSignIn() async {
     await ref.read(authNotifierProvider.notifier).signInWithGoogle();
 
+    if (!mounted) return;
     final authState = ref.read(authNotifierProvider);
-    if (authState.status == AuthStatus.error && mounted) {
+    if (authState.status == AuthStatus.error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(authState.errorMessage ??

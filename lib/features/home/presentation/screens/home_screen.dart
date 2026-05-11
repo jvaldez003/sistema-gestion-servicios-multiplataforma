@@ -13,6 +13,7 @@ import '../providers/post_providers.dart';
 import '../providers/business_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/profile_tab.dart';
+import '../widgets/loyalty_tab.dart';
 import '../widgets/post_card.dart';
 import '../../../../core/widgets/app_cached_image.dart';
 import '../../domain/models/business.dart';
@@ -40,7 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           const ExplorarTab(),
           const AppointmentsTab(),
-          const Center(child: Text('Próximamente: Sistema de Puntos')),
+          const LoyaltyTab(),
           const ProfileTab(),
         ],
       ),

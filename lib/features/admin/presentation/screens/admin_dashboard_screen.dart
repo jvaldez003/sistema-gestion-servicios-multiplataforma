@@ -15,6 +15,8 @@ import 'dart:convert';
 import 'manage_products_screen.dart';
 import 'manage_gallery_screen.dart';
 import 'manage_services_screen.dart';
+import 'manage_bookings_screen.dart';
+import 'admin_finances_screen.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
@@ -232,7 +234,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis),
                     ),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminFinancesScreen(businessId: business.id),
+                          ),
+                        );
+                      },
                       child: Row(
                         children: [
                           Text('Detalle',
@@ -500,41 +509,55 @@ class AdminDashboardScreen extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Row(
-              children: [
-                _buildSmallActionButton(
-                  Icons.inventory_2_outlined,
-                  'Ver productos',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            ManageProductsScreen(businessId: business.id)),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildSmallActionButton(
+                    Icons.calendar_today_outlined,
+                    'Citas',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              ManageBookingsScreen(businessId: business.id)),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                _buildSmallActionButton(
-                  Icons.image_outlined,
-                  'Ver galería',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            ManageGalleryScreen(businessId: business.id)),
+                  const SizedBox(width: 12),
+                  _buildSmallActionButton(
+                    Icons.inventory_2_outlined,
+                    'Ver productos',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              ManageProductsScreen(businessId: business.id)),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                _buildSmallActionButton(
-                  Icons.cut_outlined,
-                  'Servicios',
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            ManageServicesScreen(businessId: business.id)),
+                  const SizedBox(width: 12),
+                  _buildSmallActionButton(
+                    Icons.image_outlined,
+                    'Ver galería',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              ManageGalleryScreen(businessId: business.id)),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  _buildSmallActionButton(
+                    Icons.cut_outlined,
+                    'Servicios',
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              ManageServicesScreen(businessId: business.id)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -725,7 +748,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     color: Color(0xFFEF4444),
                     shape: BoxShape.circle,
                   ),
-                  child: const Text('3',
+                  child: const Text('0',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -739,15 +762,13 @@ class AdminDashboardScreen extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Column(
             children: [
-              _buildAlertItem(Icons.warning_amber_rounded,
-                  '3 citas sin confirmar para mañana', 'Revisar', Colors.amber),
-              _buildAlertItem(
-                  Icons.inventory_2_outlined,
-                  'Pomada Premium: solo 3 unidades en stock',
-                  'Gestionar',
-                  Colors.brown),
-              _buildAlertItem(Icons.people_outline,
-                  '2 solicitudes de empleo pendientes', 'Ver', Colors.black),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'No hay alertas por el momento',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+              ),
             ],
           ),
         ),
