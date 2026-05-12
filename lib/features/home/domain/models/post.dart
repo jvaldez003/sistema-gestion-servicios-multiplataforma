@@ -39,7 +39,7 @@ class BusinessPost {
       content: map['content'] ?? '',
       imageUrl: map['imageUrl'],
       serviceId: map['serviceId'],
-      likesCount: map['likesCount'] ?? 0,
+      likesCount: map['likesCount'] ?? (map['likedByUsers'] as List?)?.length ?? 0,
       commentsCount: map['commentsCount'] ?? 0,
       createdAt: map['createdAt'] is Timestamp 
           ? (map['createdAt'] as Timestamp).toDate() 

@@ -61,14 +61,19 @@ class FirebasePostRepository implements PostRepository {
     final doc = await docRef.get();
     if (!doc.exists) return;
 
-    final likes = List<String>.from(doc.data()?['likes'] ?? []);
+    final data = doc.data()!;
+    final likes = List<String>.from(data['likedByUsers'] ?? []);
+    
     if (likes.contains(userId)) {
       likes.remove(userId);
     } else {
       likes.add(userId);
     }
 
-    await docRef.update({'likes': likes});
+    await docRef.update({
+      'likedByUsers': likes,
+      'likesCount': likes.length,
+    });
   }
 
   @override

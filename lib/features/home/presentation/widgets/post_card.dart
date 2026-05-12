@@ -101,6 +101,20 @@ class _PostCardState extends ConsumerState<PostCard>
     super.dispose();
   }
 
+  int get _displayLikesCount {
+    final originalLiked = widget.post.likedByUsers.contains(widget.currentUserId);
+    int count = widget.post.likesCount;
+    
+    // If the local state differs from the backend, adjust the count optimistically
+    if (_isLikedLocal && !originalLiked) {
+      count++;
+    } else if (!_isLikedLocal && originalLiked) {
+      count--;
+    }
+    
+    return count > 0 ? count : 0;
+  }
+
   void _handleLike() {
     if (!_isLikedLocal) {
       _likeAnimController.forward(from: 0.0);
@@ -269,11 +283,11 @@ class _PostCardState extends ConsumerState<PostCard>
           ),
 
           // 4. Likes Count
-          if (widget.post.likesCount > 0)
+          if (_displayLikesCount > 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                '${widget.post.likesCount} me gusta',
+                '$_displayLikesCount ${_displayLikesCount == 1 ? 'me gusta' : 'me gusta'}',
                 style: AppTypography.bodyMedium
                     .copyWith(fontWeight: FontWeight.bold),
               ),
