@@ -4,7 +4,6 @@ import '../../domain/models/appointment.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../../domain/repositories/business_repository.dart';
 import '../../domain/repositories/service_repository.dart';
-import '../../domain/models/service.dart';
 import '../providers/booking_providers.dart';
 import '../providers/booking_notifier.dart';
 import '../providers/business_providers.dart';
@@ -17,7 +16,9 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
   final ServiceRepository _serviceRepository;
   final Ref _ref;
 
-  OrdersController(this._bookingRepository, this._businessRepository, this._serviceRepository, this._ref) : super(const AsyncValue.data(null));
+  OrdersController(this._bookingRepository, this._businessRepository,
+      this._serviceRepository, this._ref)
+      : super(const AsyncValue.data(null));
 
   Future<void> cancelAppointment(String appointmentId) async {
     state = const AsyncValue.loading();
@@ -30,7 +31,8 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> startRescheduling(BuildContext context, Appointment appointment) async {
+  Future<void> startRescheduling(
+      BuildContext context, Appointment appointment) async {
     // Show loading dialog
     showDialog(
       context: context,
@@ -40,14 +42,20 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
 
     try {
       // 1. Get the business details
-      final business = await _businessRepository.getBusinessStream(appointment.businessId).first;
+      final business = await _businessRepository
+          .getBusinessStream(appointment.businessId)
+          .first;
       if (business == null) throw 'No se pudo encontrar el negocio';
 
       // 2. Get available services to initialize the state
-      final services = await _serviceRepository.getServicesStream(appointment.businessId).first;
+      final services = await _serviceRepository
+          .getServicesStream(appointment.businessId)
+          .first;
 
       // 3. Initialize booking state
-      _ref.read(bookingStateProvider.notifier).initializeForRescheduling(appointment);
+      _ref
+          .read(bookingStateProvider.notifier)
+          .initializeForRescheduling(appointment);
 
       if (context.mounted) {
         Navigator.pop(context); // Close loading
@@ -72,7 +80,8 @@ class OrdersController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final ordersControllerProvider = StateNotifierProvider<OrdersController, AsyncValue<void>>((ref) {
+final ordersControllerProvider =
+    StateNotifierProvider<OrdersController, AsyncValue<void>>((ref) {
   final bookingRepo = ref.watch(bookingRepositoryProvider);
   final businessRepo = ref.watch(businessRepositoryProvider);
   final serviceRepo = ref.watch(serviceRepositoryProvider);
