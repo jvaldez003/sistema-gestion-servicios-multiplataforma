@@ -21,6 +21,7 @@ class AppointmentsTab extends ConsumerStatefulWidget {
 class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDate = DateTime.now();
+  bool _isProfessionalMode = false;
 
   DateTime _normalizeDate(DateTime date) {
     return DateTime(date.year, date.month, date.day);
@@ -49,7 +50,10 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final appointmentsAsync = ref.watch(userAppointmentsProvider);
+    final isProfessional = ref.watch(isProfessionalProvider);
+    final appointmentsAsync = _isProfessionalMode 
+        ? ref.watch(professionalAppointmentsProvider)
+        : ref.watch(userAppointmentsProvider);
 
     return SafeArea(
       child: appointmentsAsync.when(
@@ -66,10 +70,19 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Mis Citas', style: AppTypography.h2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_isProfessionalMode ? 'Mi Agenda' : 'Mis Citas', style: AppTypography.h2),
+                          if (isProfessional)
+                            _buildModeToggle(),
+                        ],
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Revisa tu agenda y tus próximas reservas',
+                        _isProfessionalMode 
+                            ? 'Gestiona tus citas de hoy y próximos servicios'
+                            : 'Revisa tu agenda y tus próximas reservas',
                         style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
@@ -105,6 +118,67 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, __) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  Widget _buildModeToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _buildToggleButton(
+            icon: Icons.person_outline,
+            label: 'Cliente',
+            isSelected: !_isProfessionalMode,
+            onTap: () => setState(() => _isProfessionalMode = false),
+          ),
+          _buildToggleButton(
+            icon: Icons.work_outline,
+            label: 'Pro',
+            isSelected: _isProfessionalMode,
+            onTap: () => setState(() => _isProfessionalMode = true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTypography.bodySmall.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -478,7 +552,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                   ),
                 ),
                 Text(
-                  'AM',
+                  appointment.dateTime.hour < 12 ? 'AM' : 'PM',
                   style: AppTypography.bodySmall.copyWith(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
@@ -494,7 +568,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  appointment.businessName,
+                  _isProfessionalMode ? 'Cita con cliente' : appointment.businessName,
                   style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
@@ -521,10 +595,14 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.person_pin_circle_outlined, size: 12, color: AppColors.textSecondary),
+                    Icon(
+                      _isProfessionalMode ? Icons.person_outline : Icons.person_pin_circle_outlined, 
+                      size: 12, 
+                      color: AppColors.textSecondary
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      appointment.professionalName,
+                      _isProfessionalMode ? 'Cliente ID: ${appointment.userId.substring(0, 5)}...' : appointment.professionalName,
                       style: AppTypography.bodySmall.copyWith(
                         fontSize: 10,
                         color: AppColors.textSecondary.withOpacity(0.8),
@@ -549,19 +627,33 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                       _confirmCancellation(context, appointment.id!);
                     } else if (value == 'reschedule') {
                       _rescheduleAppointment(context, appointment);
+                    } else if (value == 'complete') {
+                      _completeAppointment(context, appointment.id!);
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'reschedule',
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_month, size: 18, color: AppColors.primary),
-                          SizedBox(width: 8),
-                          Text('Reagendar'),
-                        ],
+                    if (_isProfessionalMode)
+                      const PopupMenuItem(
+                        value: 'complete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle_outline, size: 18, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('Completar'),
+                          ],
+                        ),
                       ),
-                    ),
+                    if (!_isProfessionalMode)
+                      const PopupMenuItem(
+                        value: 'reschedule',
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_month, size: 18, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text('Reagendar'),
+                          ],
+                        ),
+                      ),
                     const PopupMenuItem(
                       value: 'cancel',
                       child: Row(
@@ -615,6 +707,15 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     context.push('/business/${appointment.businessId}/booking', extra: {
       'appointment': appointment,
     });
+  }
+
+  void _completeAppointment(BuildContext context, String appointmentId) async {
+    final success = await ref.read(bookingStateProvider.notifier).updateAppointmentStatus(appointmentId, 'completed');
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cita completada correctamente'), backgroundColor: Colors.green),
+      );
+    }
   }
 
   Widget _buildStatusBadge(String status) {

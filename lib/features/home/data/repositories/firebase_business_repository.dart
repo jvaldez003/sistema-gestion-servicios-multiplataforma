@@ -236,4 +236,49 @@ class FirebaseBusinessRepository implements BusinessRepository {
       throw Exception('Error al subir imagen: $e');
     }
   }
+
+  @override
+  Stream<List<Business>> getBusinessesByMemberId(String userId) {
+    return _firestore
+        .collectionGroup('team')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final businessIds = snapshot.docs.map((doc) => doc.reference.parent.parent!.id).toList();
+      if (businessIds.isEmpty) return [];
+
+      final businesses = await Future.wait(
+        businessIds.map((id) => _firestore.collection('businesses').doc(id).get())
+      );
+
+      return businesses
+          .where((doc) => doc.exists)
+          .map((doc) {
+            final data = doc.data()!;
+            return Business(
+              id: doc.id,
+              name: data['name'] ?? '',
+              category: data['category'] ?? '',
+              description: data['description'] ?? '',
+              imageUrl: data['imageUrl'] ?? '',
+              avatarUrl: data['avatarUrl'] ?? '',
+              rating: (data['rating'] ?? 0.0).toDouble(),
+              totalReviews: data['totalReviews'] ?? 0,
+              distance: (data['distance'] ?? 0.0).toDouble(),
+              isVerified: data['isVerified'] ?? false,
+              isTop: data['isTop'] ?? false,
+              startingPrice: (data['startingPrice'] ?? 0.0).toDouble(),
+              tags: List<String>.from(data['tags'] ?? []),
+              likes: data['likes'] ?? 0,
+              comments: data['comments'] ?? 0,
+              professionalCount: data['professionalCount'] ?? 0,
+              followerCount: data['followerCount'] ?? 0,
+              galleryImages: List<String>.from(data['galleryImages'] ?? []),
+            );
+          })
+          .toList();
+    });
+  }
 }
+
+

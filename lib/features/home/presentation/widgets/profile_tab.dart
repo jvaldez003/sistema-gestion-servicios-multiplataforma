@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -132,27 +133,39 @@ class ProfileTab extends ConsumerWidget {
           // Business Section (Conditional)
           businessAsync.when(
             data: (business) {
-              if (business == null)
+              final isProfessional = ref.watch(isProfessionalProvider);
+              if (business == null && !isProfessional)
                 return const SliverToBoxAdapter(child: SizedBox.shrink());
+              
               return SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    _buildSectionHeader(context, 'NEGOCIO', '', Icons.business,
+                    _buildSectionHeader(context, 'GESTIÓN PROFESIONAL', '', Icons.work_outline,
                         isCategory: true),
                     _buildMenuContainer(context, [
-                      _buildMenuItem(
-                        context,
-                        icon: Icons.dashboard_outlined,
-                        title: 'Panel de Administrador',
-                        subtitle: 'Gestionar ${business.name}',
-                        onTap: () => Navigator.push(
+                      if (business != null)
+                        _buildMenuItem(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const AdminDashboardScreen(),
+                          icon: Icons.dashboard_outlined,
+                          title: 'Panel de Administrador',
+                          subtitle: 'Gestionar ${business.name}',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AdminDashboardScreen(),
+                            ),
                           ),
+                          isLast: !isProfessional,
                         ),
-                        isLast: true,
-                      ),
+                      if (isProfessional)
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.calendar_month_outlined,
+                          title: 'Mi Horario de Trabajo',
+                          subtitle: 'Configura tus horas disponibles',
+                          onTap: () => context.push('/schedule'),
+                          isLast: true,
+                        ),
                     ]),
                   ],
                 ),

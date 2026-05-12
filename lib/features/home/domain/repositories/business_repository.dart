@@ -15,4 +15,5 @@ abstract class BusinessRepository {
 
   // User relations
   Stream<List<Business>> getFollowedBusinessesStream(String userId);
+  Stream<List<Business>> getBusinessesByMemberId(String userId);
 }

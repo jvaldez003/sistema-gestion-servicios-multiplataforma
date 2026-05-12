@@ -62,6 +62,25 @@ class FirebaseBookingRepository implements BookingRepository {
   }
 
   @override
+  Stream<List<Appointment>> getProfessionalAppointments(String professionalId) {
+    return _firestore
+        .collection('appointments')
+        .where('professionalId', isEqualTo: professionalId)
+        .snapshots()
+        .map((snapshot) {
+      final appointments = snapshot.docs
+          .map((doc) => Appointment.fromMap(doc.data(), doc.id))
+          .toList();
+      
+      // Sort in memory to avoid Firestore index requirement
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      
+      return appointments;
+    });
+  }
+
+
+  @override
   Future<bool> isSlotAvailable(String professionalId, DateTime dateTime, Duration duration) async {
     final endDateTime = dateTime.add(duration);
 
@@ -89,10 +108,15 @@ class FirebaseBookingRepository implements BookingRepository {
 
   @override
   Future<void> cancelAppointment(String appointmentId) async {
+    await updateAppointmentStatus(appointmentId, 'cancelled');
+  }
+
+  @override
+  Future<void> updateAppointmentStatus(String appointmentId, String status) async {
     await _firestore
         .collection('appointments')
         .doc(appointmentId)
-        .update({'status': 'cancelled'});
+        .update({'status': status});
   }
 
   @override

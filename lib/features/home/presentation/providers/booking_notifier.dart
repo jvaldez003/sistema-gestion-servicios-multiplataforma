@@ -116,9 +116,13 @@ class BookingNotifier extends StateNotifier<BookingState> {
   }
 
   Future<bool> cancelAppointment(String appointmentId) async {
+    return updateAppointmentStatus(appointmentId, 'cancelled');
+  }
+
+  Future<bool> updateAppointmentStatus(String appointmentId, String status) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repository.cancelAppointment(appointmentId);
+      await _repository.updateAppointmentStatus(appointmentId, status);
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {

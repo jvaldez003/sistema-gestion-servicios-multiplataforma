@@ -8,6 +8,7 @@ import '../../../features/home/presentation/screens/business_profile_screen.dart
 import '../../../features/home/presentation/screens/booking_flow_screen.dart';
 import '../../../features/home/domain/models/business.dart';
 import '../../../features/home/domain/models/appointment.dart';
+import '../../../features/home/presentation/screens/professional_schedule_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
@@ -70,7 +71,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Future booking route
+      GoRoute(
+        path: '/schedule',
+        builder: (context, state) => const ProfessionalScheduleScreen(),
+      ),
     ],
   );
 });
