@@ -135,6 +135,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
     required String userId,
     required String businessId,
     required String businessName,
+    String clientName = '',
     String? rescheduleAppointmentId,
   }) async {
     if (state.selectedDate == null || state.selectedTime == null || state.professionalId == null) {
@@ -174,6 +175,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
           dateTime: appointmentDateTime,
           professionalId: state.professionalId!,
           professionalName: state.professionalName!,
+          clientName: clientName,
           createdAt: DateTime.now(),
         );
         await _repository.createAppointment(appointment);

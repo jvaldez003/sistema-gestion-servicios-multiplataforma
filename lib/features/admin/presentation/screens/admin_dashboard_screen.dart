@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/domain/models/business.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_post_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_product_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/screens/new_service_flow.dart';
@@ -17,6 +16,7 @@ import 'manage_gallery_screen.dart';
 import 'manage_services_screen.dart';
 import 'manage_bookings_screen.dart';
 import 'admin_finances_screen.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/screens/notifications_screen.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
@@ -45,6 +45,39 @@ class AdminDashboardScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, Business business) {
     final servicesAsync = ref.watch(adminServicesProvider);
     final postsAsync = ref.watch(adminPostsProvider);
+    final todayStats = ref.watch(adminTodayStatsProvider);
+    final todayCitas = todayStats['citas'] as int;
+    final todayCanceladas = todayStats['canceladas'] as int;
+    final todayIngresos = todayStats['ingresos'] as double;
+    final ingresosFmt = '\$${NumberFormat.compact(locale: 'es').format(todayIngresos)}';
+
+    final now = DateTime.now();
+    final weekStart = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 7));
+    final weekAppointments = ref.watch(adminFinancesProvider((business.id, weekStart, weekEnd))).valueOrNull ?? [];
+    final weekRevenue = weekAppointments.where((a) => a.status != 'cancelled').fold<double>(0, (s, a) => s + a.totalPrice);
+    final weekRevenueFmt = '\$${NumberFormat.compact(locale: 'es').format(weekRevenue)}';
+
+    // Per-day revenue (Mon=0 … Sun=6)
+    final dayRevenues = List<double>.filled(7, 0.0);
+    final Map<String, int> memberCitas = {};
+    final Map<String, double> memberIngresos = {};
+    for (final appt in weekAppointments) {
+      if (appt.status != 'cancelled') {
+        final d = appt.dateTime.weekday - 1;
+        if (d >= 0 && d < 7) dayRevenues[d] += appt.totalPrice;
+        if (appt.professionalId.isNotEmpty) {
+          memberCitas[appt.professionalId] = (memberCitas[appt.professionalId] ?? 0) + 1;
+          memberIngresos[appt.professionalId] = (memberIngresos[appt.professionalId] ?? 0.0) + appt.totalPrice;
+        }
+      }
+    }
+    final maxDayRevenue = dayRevenues.reduce((a, b) => a > b ? a : b);
+    final totalWeekCitas = memberCitas.values.fold(0, (a, b) => a + b);
+
+    final workRequests = ref.watch(adminWorkRequestsProvider).valueOrNull ?? [];
+    final pendingToday = ref.watch(adminPendingTodayProvider);
+    final totalAlerts = workRequests.length + (pendingToday > 0 ? 1 : 0);
 
     return CustomScrollView(
       slivers: [
@@ -69,7 +102,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha:0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.arrow_back,
@@ -92,14 +125,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Admin',
-                          style: AppTypography.bodySmall.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha:0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
@@ -107,7 +140,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           IconButton(
                             icon: const Icon(Icons.notifications_none,
                                 color: Colors.white),
-                            onPressed: () {},
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
                           ),
                           Positioned(
                             top: 12,
@@ -135,16 +168,19 @@ class AdminDashboardScreen extends ConsumerWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.5), width: 2),
+                              color: Colors.white.withValues(alpha:0.5), width: 2),
                         ),
                         child: Stack(
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundColor: Colors.white.withOpacity(0.1),
+                              backgroundColor: Colors.white.withValues(alpha:0.1),
                               child: business.avatarUrl.isNotEmpty
                                   ? AppCachedImage(
+                                      key: ValueKey(business.avatarUrl),
                                       imageUrl: business.avatarUrl,
+                                      width: 64,
+                                      height: 64,
                                       borderRadius: BorderRadius.circular(32),
                                     )
                                   : const Icon(Icons.store,
@@ -174,7 +210,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         children: [
                           Text(
                             business.name,
-                            style: AppTypography.h2.copyWith(
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 24),
@@ -182,8 +218,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                           Text(
                             DateFormat('EEEE, d de MMMM yyyy', 'es')
                                 .format(DateTime.now()),
-                            style: AppTypography.bodySmall
-                                .copyWith(color: Colors.white.withOpacity(0.8)),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.white.withValues(alpha:0.8)),
                           ),
                         ],
                       ),
@@ -206,14 +242,17 @@ class AdminDashboardScreen extends ConsumerWidget {
               childAspectRatio: 1.2,
             ),
             delegate: SliverChildListDelegate([
-              _buildStatCard('Ingresos hoy', r'$0', Icons.attach_money, '0%',
-                  isUp: true),
-              _buildStatCard('Citas hoy', '0', Icons.calendar_today, '0%',
-                  isUp: true),
-              _buildStatCard('Ocupación', '0%', Icons.access_time, '0%',
-                  isUp: true),
-              _buildStatCard('Cancelaciones', '0', Icons.error_outline, '0%',
-                  isUp: false),
+              _buildStatCard('Ingresos hoy', ingresosFmt, Icons.attach_money,
+                  'hoy', isUp: todayIngresos > 0),
+              _buildStatCard('Citas hoy', '$todayCitas', Icons.calendar_today,
+                  'hoy', isUp: todayCitas > 0),
+              _buildStatCard('Ocupación',
+                  todayCitas + todayCanceladas == 0
+                      ? '0%'
+                      : '${(todayCitas * 100 ~/ (todayCitas + todayCanceladas))}%',
+                  Icons.access_time, 'hoy', isUp: todayCitas > 0),
+              _buildStatCard('Cancelaciones', '$todayCanceladas',
+                  Icons.error_outline, 'hoy', isUp: todayCanceladas == 0),
             ]),
           ),
         ),
@@ -229,8 +268,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text('Ingresos de la semana',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis),
                     ),
                     GestureDetector(
@@ -257,9 +296,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Text(r'$0',
-                        style: AppTypography.h2
-                            .copyWith(fontWeight: FontWeight.bold)),
+                    Text(weekRevenueFmt,
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(width: 10),
                     Flexible(
                       child: Container(
@@ -272,12 +311,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.horizontal_rule,
+                            Icon(Icons.calendar_view_week,
                                 size: 10, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Flexible(
-                              child: const Text('Sin datos aún',
-                                  style: TextStyle(
+                              child: Text('Esta semana',
+                                  style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold),
@@ -296,13 +335,13 @@ class AdminDashboardScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _buildBar(4, 'Lun'),
-                      _buildBar(4, 'Mar'),
-                      _buildBar(4, 'Mié'),
-                      _buildBar(4, 'Jue'),
-                      _buildBar(4, 'Vie', isActive: true),
-                      _buildBar(4, 'Sáb'),
-                      _buildBar(4, 'Dom'),
+                      _buildBar(dayRevenues[0], maxDayRevenue, 'Lun', isActive: now.weekday == 1),
+                      _buildBar(dayRevenues[1], maxDayRevenue, 'Mar', isActive: now.weekday == 2),
+                      _buildBar(dayRevenues[2], maxDayRevenue, 'Mié', isActive: now.weekday == 3),
+                      _buildBar(dayRevenues[3], maxDayRevenue, 'Jue', isActive: now.weekday == 4),
+                      _buildBar(dayRevenues[4], maxDayRevenue, 'Vie', isActive: now.weekday == 5),
+                      _buildBar(dayRevenues[5], maxDayRevenue, 'Sáb', isActive: now.weekday == 6),
+                      _buildBar(dayRevenues[6], maxDayRevenue, 'Dom', isActive: now.weekday == 7),
                     ],
                   ),
                 ),
@@ -313,8 +352,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 16),
                     _buildLegend(const Color(0xFFC084FC), 'Otros días'),
                     const Spacer(),
-                    const Text('0 citas totales',
-                        style: TextStyle(
+                    Text('${todayCitas + todayCanceladas} citas hoy',
+                        style: const TextStyle(
                             color: AppColors.textSecondary, fontSize: 12)),
                   ],
                 ),
@@ -334,8 +373,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text('Imágenes del negocio',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis),
                     ),
                     GestureDetector(
@@ -344,7 +383,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -369,91 +408,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
                 const SizedBox(height: 16),
-                StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('businesses')
-                      .doc(business.id)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    final data =
-                        snapshot.data?.data() as Map<String, dynamic>? ?? {};
-                    final images =
-                        List<String>.from(data['galleryImages'] ?? []);
-
-                    if (images.isEmpty) {
-                      return Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_photo_alternate_outlined,
-                                  size: 32, color: AppColors.textSecondary),
-                              const SizedBox(height: 8),
-                              Text('No hay imágenes aún',
-                                  style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12)),
-                              Text('Agrega fotos de tu negocio',
-                                  style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 10)),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    return SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: images.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: 100,
-                            margin: const EdgeInsets.only(right: 10),
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: AppCachedImage(
-                                    imageUrl: images[index],
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () => _removeGalleryImage(
-                                        business.id, images, index),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.5),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.close,
-                                          size: 12, color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
+                _buildGalleryStrip(context, business),
               ],
             ),
           ),
@@ -467,8 +422,8 @@ class AdminDashboardScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Publicar contenido',
-                    style: AppTypography.titleLarge
-                        .copyWith(fontWeight: FontWeight.bold)),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold)),
                 postsAsync.when(
                   data: (posts) => Text('${posts.length} publicados',
                       style: const TextStyle(
@@ -576,8 +531,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Mis servicios',
-                              style: AppTypography.titleLarge
-                                  .copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis),
                           const Text('Visibles en Explorar',
                               style: TextStyle(
@@ -656,8 +611,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text('Rendimiento del equipo',
-                          style: AppTypography.titleLarge
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(width: 8),
@@ -714,14 +669,17 @@ class AdminDashboardScreen extends ConsumerWidget {
                             .take(2)
                             .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
                             .join();
-                        final commission =
-                            (m['commission'] ?? 0).toDouble() / 100;
+                        final userId = m['userId'] ?? doc.id;
+                        final citas = memberCitas[userId] ?? 0;
+                        final ingresos = memberIngresos[userId] ?? 0.0;
+                        final performance = totalWeekCitas > 0 ? citas / totalWeekCitas : 0.0;
+                        final ingresosFmtMember = '\$${NumberFormat.compact(locale: 'es').format(ingresos)}';
                         return _buildTeamMember(
                           name,
                           initials,
-                          commission,
-                          '\$0',
-                          '0/0',
+                          performance.clamp(0.0, 1.0),
+                          ingresosFmtMember,
+                          '$citas',
                         );
                       }).toList(),
                     );
@@ -739,17 +697,17 @@ class AdminDashboardScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Text('Alertas',
-                    style: AppTypography.titleLarge
-                        .copyWith(fontWeight: FontWeight.bold)),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: totalAlerts > 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
                     shape: BoxShape.circle,
                   ),
-                  child: const Text('0',
-                      style: TextStyle(
+                  child: Text('$totalAlerts',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold)),
@@ -762,13 +720,28 @@ class AdminDashboardScreen extends ConsumerWidget {
         SliverToBoxAdapter(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'No hay alertas por el momento',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              if (totalAlerts == 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'No hay alertas por el momento',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
                 ),
-              ),
+              if (workRequests.isNotEmpty)
+                _buildAlertItem(
+                  Icons.person_add_outlined,
+                  '${workRequests.length} solicitud${workRequests.length == 1 ? '' : 'es'} de ingreso al equipo pendiente${workRequests.length == 1 ? '' : 's'}',
+                  'Ver equipo',
+                  const Color(0xFFF97316),
+                ),
+              if (pendingToday > 0)
+                _buildAlertItem(
+                  Icons.pending_actions_outlined,
+                  '$pendingToday cita${pendingToday == 1 ? '' : 's'} de hoy sin confirmar',
+                  'Ver citas',
+                  const Color(0xFFF59E0B),
+                ),
             ],
           ),
         ),
@@ -819,7 +792,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     color: (isUp
                             ? const Color(0xFF10B981)
                             : const Color(0xFFEF4444))
-                        .withOpacity(0.05),
+                        .withValues(alpha:0.05),
                     shape: BoxShape.circle),
                 child: Icon(icon,
                     size: 18,
@@ -850,8 +823,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(value,
-                  style: AppTypography.h3
-                      .copyWith(fontWeight: FontWeight.bold, fontSize: 22)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
               Text(label,
                   style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 11)),
@@ -875,18 +847,20 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBar(double height, String label, {bool isActive = false}) {
+  Widget _buildBar(double value, double maxValue, String label, {bool isActive = false}) {
+    final fraction = maxValue > 0 ? (value / maxValue).clamp(0.0, 1.0) : 0.0;
+    final barHeight = (fraction * 90).clamp(4.0, 90.0);
     return Column(
       children: [
         const SizedBox(height: 4),
         Container(
           width: 32,
-          height: height,
+          height: barHeight,
           decoration: BoxDecoration(
             color: isActive
                 ? const Color(0xFFF97316)
                 : const Color(0xFFC084FC).withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16), // Pill shape
+            borderRadius: BorderRadius.circular(16),
           ),
           child: isActive
               ? Center(
@@ -1144,8 +1118,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(title,
-                    style: AppTypography.bodySmall
-                        .copyWith(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     overflow: TextOverflow.ellipsis),
               ),
             ],
@@ -1280,12 +1253,12 @@ class AdminDashboardScreen extends ConsumerWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('\$$earnings',
+              Text(earnings,
                   style: const TextStyle(
                       color: Color(0xFF10B981),
                       fontWeight: FontWeight.bold,
                       fontSize: 12)),
-              Text('$appointments citas',
+              Text('$appointments cita${appointments == '1' ? '' : 's'}',
                   style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 10)),
             ],
@@ -1328,6 +1301,83 @@ class AdminDashboardScreen extends ConsumerWidget {
                     fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGalleryStrip(BuildContext context, Business business) {
+    final images = business.galleryImages;
+
+    if (images.isEmpty) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_photo_alternate_outlined,
+                  size: 32, color: AppColors.textSecondary),
+              const SizedBox(height: 8),
+              Text('No hay imágenes aún',
+                  style: TextStyle(
+                      color: AppColors.textSecondary, fontSize: 12)),
+              Text('Agrega fotos de tu negocio',
+                  style: TextStyle(
+                      color: AppColors.textSecondary, fontSize: 10)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 100,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        itemBuilder: (context, index) {
+          final imageUrl = images[index];
+          return Container(
+            width: 100,
+            margin: const EdgeInsets.only(right: 10),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: AppCachedImage(
+                    key: ValueKey(imageUrl),
+                    imageUrl: imageUrl,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () =>
+                        _removeGalleryImage(business.id, images, index),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close,
+                          size: 12, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

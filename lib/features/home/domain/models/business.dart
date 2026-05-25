@@ -18,6 +18,9 @@ class Business {
   final int professionalCount;
   final int followerCount;
   final List<String> galleryImages;
+  final String? address;
+  final String? phone;
+  final String? openingHours;
 
   Business({
     required this.id,
@@ -39,5 +42,16 @@ class Business {
     this.professionalCount = 1,
     this.followerCount = 0,
     this.galleryImages = const [],
+    this.address,
+    this.phone,
+    this.openingHours,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Business && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

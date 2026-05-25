@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+
 import '../../domain/models/post.dart';
 import '../providers/post_providers.dart';
+import '../providers/business_providers.dart';
 import 'comment_modal.dart';
 import '../../../../core/widgets/app_cached_image.dart';
 import 'package:go_router/go_router.dart';
@@ -132,6 +133,82 @@ class _PostCardState extends ConsumerState<PostCard>
     }
   }
 
+  void _showPostMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
+              title: const Text('Eliminar publicación', style: TextStyle(color: Color(0xFFEF4444))),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (d) => AlertDialog(
+                    title: const Text('¿Eliminar publicación?'),
+                    content: const Text('Esta acción es permanente.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancelar')),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(d, true),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white),
+                        child: const Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && mounted) {
+                  try {
+                    await ref.read(postRepositoryProvider).deletePost(widget.post.businessId, widget.post.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: const Text('Publicación eliminada'), behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e'), backgroundColor: const Color(0xFFEF4444), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined, color: AppColors.textSecondary),
+              title: const Text('Reportar publicación'),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Gracias por tu reporte. Lo revisaremos pronto.'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close, color: AppColors.textSecondary),
+              title: const Text('Cancelar'),
+              onTap: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showComments(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -161,13 +238,13 @@ class _PostCardState extends ConsumerState<PostCard>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha:0.3),
                           width: 2), // Ring around avatar
                     ),
                     padding: const EdgeInsets.all(2),
                     child: CircleAvatar(
                       radius: 16,
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withValues(alpha:0.1),
                       child: widget.post.businessAvatar.isNotEmpty
                           ? AppCachedImage(
                               imageUrl: widget.post.businessAvatar,
@@ -188,8 +265,7 @@ class _PostCardState extends ConsumerState<PostCard>
                       children: [
                         Text(
                           widget.post.businessName,
-                          style: AppTypography.bodyMedium
-                              .copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           DateFormat('d MMM', 'es')
@@ -205,7 +281,7 @@ class _PostCardState extends ConsumerState<PostCard>
                   icon: const Icon(Icons.more_vert, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onPressed: () {},
+                  onPressed: () => _showPostMenu(context),
                 ),
               ],
             ),
@@ -269,15 +345,7 @@ class _PostCardState extends ConsumerState<PostCard>
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 26),
                   onPressed: () => _showComments(context),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send_outlined, size: 26),
-                  onPressed: () {},
-                ),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.bookmark_border_rounded, size: 26),
-                  onPressed: () {},
-                ),
               ],
             ),
           ),
@@ -288,8 +356,7 @@ class _PostCardState extends ConsumerState<PostCard>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 '$_displayLikesCount ${_displayLikesCount == 1 ? 'me gusta' : 'me gusta'}',
-                style: AppTypography.bodyMedium
-                    .copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
 
@@ -298,8 +365,7 @@ class _PostCardState extends ConsumerState<PostCard>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: RichText(
               text: TextSpan(
-                style: AppTypography.bodyMedium
-                    .copyWith(color: AppColors.textPrimary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
                 children: [
                   TextSpan(
                     text: '${widget.post.businessName} ',
@@ -331,11 +397,12 @@ class _PostCardState extends ConsumerState<PostCard>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: OutlinedButton(
-              onPressed: () =>
-                  context.push('/business/${widget.post.businessId}/booking'),
+              onPressed: widget.post.businessId.isEmpty
+                  ? null
+                  : () => context.push('/business/${widget.post.businessId}/booking'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                side: BorderSide(color: AppColors.primary.withValues(alpha:0.5)),
                 minimumSize: const Size(double.infinity, 40),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -348,7 +415,7 @@ class _PostCardState extends ConsumerState<PostCard>
           ),
 
           // Subtle divider between posts
-          Container(height: 1, color: AppColors.border.withOpacity(0.5)),
+          Container(height: 1, color: AppColors.border.withValues(alpha:0.5)),
         ],
       ),
     );

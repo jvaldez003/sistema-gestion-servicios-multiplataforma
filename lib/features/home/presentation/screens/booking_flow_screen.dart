@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/shimmer_loader.dart';
 import '../../domain/models/business.dart';
 import '../../domain/models/appointment.dart';
 import '../../domain/models/service.dart';
@@ -28,7 +28,6 @@ class BookingFlowScreen extends ConsumerWidget {
     final bookingState = ref.watch(bookingStateProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           bookingState.currentStep == 0
@@ -36,7 +35,6 @@ class BookingFlowScreen extends ConsumerWidget {
               : bookingState.currentStep == 1
                   ? 'Elegir Horario'
                   : 'Confirmar Reserva',
-          style: AppTypography.titleLarge,
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -48,9 +46,6 @@ class BookingFlowScreen extends ConsumerWidget {
             }
           },
         ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
       ),
       body: Column(
         children: [
@@ -111,10 +106,10 @@ class BookingFlowScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -130,10 +125,10 @@ class BookingFlowScreen extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total (${state.selectedServices.length} serv.)', style: AppTypography.bodyMedium),
+                    Text('Total (${state.selectedServices.length} serv.)'),
                     Text(
                       NumberFormat.currency(symbol: '\$', decimalDigits: 0, locale: 'es_CO').format(state.totalPrice),
-                      style: AppTypography.h3.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -148,10 +143,10 @@ class BookingFlowScreen extends ConsumerWidget {
                 elevation: 0,
               ),
               child: state.isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                   : Text(
                       state.currentStep == 2 ? 'Confirmar Reserva' : 'Continuar',
-                      style: AppTypography.titleMedium.copyWith(color: Colors.white),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
             ),
           ],
@@ -171,6 +166,7 @@ class BookingFlowScreen extends ConsumerWidget {
         userId: auth.id,
         businessId: business.id,
         businessName: business.name,
+        clientName: auth.name ?? auth.email,
         rescheduleAppointmentId: appointmentToReschedule?.id,
       );
 
@@ -192,7 +188,7 @@ class BookingFlowScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(isReschedule ? '¡Reagendado!' : '¡Reserva Exitosa!', style: AppTypography.h3),
+            Text(isReschedule ? '¡Reagendado!' : '¡Reserva Exitosa!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(isReschedule ? 'Tu cita ha sido reprogramada correctamente.' : 'Tu cita ha sido agendada correctamente.', textAlign: TextAlign.center),
           ],
@@ -233,7 +229,7 @@ class _SelectServicesStep extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ListShimmer(count: 4, itemBuilder: AppointmentShimmer.new),
       error: (err, __) => Center(child: Text('Error: $err')),
     );
   }
@@ -249,7 +245,9 @@ class _ServiceItem extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.06)
+            : Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isSelected ? AppColors.primary : AppColors.border, width: isSelected ? 2 : 1),
       ),
@@ -264,14 +262,14 @@ class _ServiceItem extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(service.name, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                    Text(service.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(service.description, style: AppTypography.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(service.description, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 12),
                     Row(children: [
                       const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text(service.duration, style: AppTypography.bodySmall),
+                      Text(service.duration, style: Theme.of(context).textTheme.bodySmall),
                     ]),
                   ],
                 ),
@@ -281,7 +279,7 @@ class _ServiceItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(NumberFormat.currency(symbol: '\$', decimalDigits: 0, locale: 'es_CO').format(service.price),
-                      style: AppTypography.titleMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Checkbox(
                     value: isSelected,
@@ -313,16 +311,16 @@ class _SchedulingStep extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Selecciona un profesional', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+          Text('Selecciona un profesional', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: AppSpacing.md),
           teamAsync.when(
             data: (team) => _ProfessionalList(team: team, selectedId: bookingState.professionalId),
-            loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
+            loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator(color: AppColors.primary))),
             error: (err, __) => Text('Error: $err'),
           ),
           if (bookingState.professionalId != null) ...[
             const SizedBox(height: AppSpacing.xl),
-            Text('Fecha', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+            Text('Fecha', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             TableCalendar(
               firstDay: DateTime.now(),
               lastDay: DateTime.now().add(const Duration(days: 30)),
@@ -333,7 +331,7 @@ class _SchedulingStep extends ConsumerWidget {
               headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Horario disponible', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+            Text('Horario disponible', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: AppSpacing.md),
             if (bookingState.selectedDate != null) _TimeGrid(businessId: businessId) else const Text('Selecciona una fecha primero'),
           ] else
@@ -372,12 +370,12 @@ class _ProfessionalList extends ConsumerWidget {
                     backgroundColor: isSelected ? AppColors.primary : AppColors.border,
                     child: CircleAvatar(
                       radius: 28,
-                      backgroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                       child: Text(member['name'][0].toUpperCase(), style: TextStyle(color: isSelected ? AppColors.primary : AppColors.textPrimary)),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(member['name'], style: AppTypography.bodySmall, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                  Text(member['name'], style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
                 ],
               ),
             ),
@@ -442,7 +440,7 @@ class _TimeGrid extends ConsumerWidget {
           }).toList(),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       error: (err, __) => Text('Error: $err'),
     );
   }
@@ -455,7 +453,7 @@ class _NoProfessionalPlaceholder extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
       child: Center(
         child: Column(children: [
-          Icon(Icons.person_search, size: 64, color: AppColors.primary.withOpacity(0.3)),
+          Icon(Icons.person_search, size: 64, color: AppColors.primary.withValues(alpha: 0.3)),
           const SizedBox(height: AppSpacing.md),
           const Text('Selecciona un profesional primero para ver su disponibilidad.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
         ]),
@@ -479,9 +477,9 @@ class _SummaryStep extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: Theme.of(context).cardTheme.color, borderRadius: BorderRadius.circular(20)),
               child: Column(children: [
-                Row(children: [const Icon(Icons.storefront, color: AppColors.primary), const SizedBox(width: 12), Text(business.name, style: AppTypography.titleLarge)]),
+                Row(children: [const Icon(Icons.storefront, color: AppColors.primary), const SizedBox(width: 12), Text(business.name, style: Theme.of(context).textTheme.titleLarge)]),
                 const Divider(height: 32),
                 _buildRow(Icons.calendar_today, 'Fecha', DateFormat('EEEE, d MMMM', 'es').format(state.selectedDate!)),
                 const SizedBox(height: 16),
@@ -491,13 +489,13 @@ class _SummaryStep extends StatelessWidget {
               ]),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Servicios seleccionados', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+            Text('Servicios seleccionados', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: AppSpacing.md),
             ...state.selectedServices.map((s) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(s.name, style: AppTypography.bodyMedium),
-                Text('\$${s.price.toStringAsFixed(0)}', style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                Text(s.name),
+                Text('\$${s.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
               ]),
             )),
           ],
@@ -511,8 +509,8 @@ class _SummaryStep extends StatelessWidget {
       Icon(icon, size: 20, color: AppColors.textSecondary),
       const SizedBox(width: 12),
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: AppTypography.bodySmall),
-        Text(value, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       ]),
     ]);
   }

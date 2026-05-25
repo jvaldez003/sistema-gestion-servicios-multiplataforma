@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+
 import '../../../../core/widgets/app_cached_image.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../admin/presentation/providers/admin_providers.dart';
@@ -18,6 +18,7 @@ import '../screens/security_screen.dart';
 import '../screens/favorites_screen.dart';
 import '../screens/orders_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/register_business_step_one.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -30,7 +31,6 @@ class ProfileTab extends ConsumerWidget {
     final businessAsync = ref.watch(adminBusinessProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -135,7 +135,29 @@ class ProfileTab extends ConsumerWidget {
             data: (business) {
               final isProfessional = ref.watch(isProfessionalProvider);
               if (business == null && !isProfessional)
-                return const SliverToBoxAdapter(child: SizedBox.shrink());
+                return SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      _buildSectionHeader(context, 'TU NEGOCIO', '', Icons.store_outlined,
+                          isCategory: true),
+                      _buildMenuContainer(context, [
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.add_business_outlined,
+                          title: 'Crear mi negocio',
+                          subtitle: 'Empieza a gestionar citas hoy',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterBusinessStepOne(),
+                            ),
+                          ),
+                          isLast: true,
+                        ),
+                      ]),
+                    ],
+                  ),
+                );
               
               return SliverToBoxAdapter(
                 child: Column(
@@ -236,7 +258,7 @@ class ProfileTab extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         'FlowServ v1.0.0',
-                        style: AppTypography.bodySmall.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -266,7 +288,7 @@ class ProfileTab extends ConsumerWidget {
                           const SizedBox(width: 10),
                           Text(
                             'Cerrar sesión',
-                            style: AppTypography.titleMedium.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: AppColors.error,
                               fontWeight: FontWeight.bold,
                             ),
@@ -312,7 +334,7 @@ class ProfileTab extends ConsumerWidget {
             children: [
               Text(
                 'Mi Perfil',
-                style: AppTypography.h2.copyWith(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -350,9 +372,9 @@ class ProfileTab extends ConsumerWidget {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha:0.15),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.1)),
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -382,11 +404,11 @@ class ProfileTab extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -408,7 +430,7 @@ class ProfileTab extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha:0.2),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -424,7 +446,7 @@ class ProfileTab extends ConsumerWidget {
                           (user?.name != null && user!.name!.isNotEmpty)
                               ? user.name![0].toUpperCase()
                               : '?',
-                          style: AppTypography.h1.copyWith(
+                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
                             color: Colors.white,
                             fontSize: 36,
                             fontWeight: FontWeight.w900,
@@ -442,7 +464,7 @@ class ProfileTab extends ConsumerWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha:0.1),
                         blurRadius: 4,
                       ),
                     ],
@@ -460,7 +482,7 @@ class ProfileTab extends ConsumerWidget {
               children: [
                 Text(
                   user?.name ?? 'Configurar Perfil',
-                  style: AppTypography.titleLarge.copyWith(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                   ),
@@ -468,7 +490,7 @@ class ProfileTab extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? 'correo@ejemplo.com',
-                  style: AppTypography.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -476,12 +498,12 @@ class ProfileTab extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
                     'Miembro Silver',
-                    style: AppTypography.bodySmall.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                     ),
@@ -506,6 +528,7 @@ class ProfileTab extends ConsumerWidget {
         children: [
           Expanded(
             child: _buildStatItem(
+              context,
               appointmentsAsync.maybeWhen(
                 data: (appointments) => '${appointments.where((a) => a.status != 'cancelled').length}',
                 orElse: () => '...',
@@ -518,6 +541,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatItem(
+              context,
               '$points',
               'Puntos',
               Icons.stars_rounded,
@@ -527,6 +551,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatItem(
+              context,
               followedAsync.maybeWhen(
                 data: (followed) => '${followed.length}',
                 orElse: () => '...',
@@ -542,20 +567,23 @@ class ProfileTab extends ConsumerWidget {
   }
 
   Widget _buildStatItem(
-      String value, String label, IconData icon, Color color) {
+      BuildContext context, String value, String label, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: isDark
+            ? Border.all(color: AppColors.borderDark)
+            : Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),
@@ -563,7 +591,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: AppTypography.titleLarge.copyWith(
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
               fontSize: 22,
               letterSpacing: -0.5,
@@ -572,7 +600,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: AppTypography.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -598,12 +626,12 @@ class ProfileTab extends ConsumerWidget {
           Text(
             title,
             style: isCategory
-                ? AppTypography.bodySmall.copyWith(
+                ? Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                     color: AppColors.textSecondary,
                   )
-                : AppTypography.titleLarge.copyWith(
+                : Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
           ),
@@ -613,7 +641,7 @@ class ProfileTab extends ConsumerWidget {
               onTap: onSubtitleTap,
               child: Text(
                 subtitle,
-                style: AppTypography.bodySmall.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: onSubtitleTap != null
                       ? AppColors.primary
                       : AppColors.textSecondary,
@@ -637,18 +665,20 @@ class ProfileTab extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                border: Theme.of(context).brightness == Brightness.dark
+                    ? Border.all(color: AppColors.borderDark)
+                    : Border.all(color: const Color(0xFFF1F5F9)),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.favorite_border_rounded, color: AppColors.textSecondary.withOpacity(0.3), size: 48),
+                  Icon(Icons.favorite_border_rounded, color: AppColors.textSecondary.withValues(alpha: 0.3), size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Aquí verás tus negocios favoritos',
                     textAlign: TextAlign.center,
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary,
                       fontStyle: FontStyle.italic,
                     ),
@@ -682,18 +712,22 @@ class ProfileTab extends ConsumerWidget {
   }
 
   Widget _buildMenuContainer(BuildContext context, List<Widget> items) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: isDark ? Border.all(color: AppColors.borderDark) : null,
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         children: items,
@@ -713,27 +747,31 @@ class ProfileTab extends ConsumerWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.surfaceVariantDark
+                  : const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.textPrimary, size: 20),
           ),
           title: Text(
             title,
-            style: AppTypography.bodyLarge.copyWith(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           subtitle: Text(
             subtitle,
-            style: AppTypography.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          trailing: const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textSecondary),
+          trailing: Icon(Icons.chevron_right_rounded,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary),
           onTap: onTap,
         ),
         if (!isLast)
-          const Divider(height: 1, indent: 70, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, indent: 70, color: Theme.of(context).dividerColor),
       ],
     );
   }
@@ -752,7 +790,7 @@ class ProfileTab extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(Icons.storefront_outlined,
@@ -765,15 +803,15 @@ class ProfileTab extends ConsumerWidget {
               children: [
                 Text(
                   '¿Tienes un negocio?',
-                  style: AppTypography.titleLarge.copyWith(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   'Regístralo gratis en FlowServ',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],

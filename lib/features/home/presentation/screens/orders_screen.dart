@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/appointment.dart';
 import '../providers/booking_providers.dart';
 import '../providers/orders_notifier.dart';
@@ -15,17 +14,14 @@ class OrdersScreen extends ConsumerWidget {
     final appointmentsAsync = ref.watch(userAppointmentsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Mis Pedidos',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
       ),
@@ -60,7 +56,7 @@ class OrdersScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.08),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -72,7 +68,7 @@ class OrdersScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             'No tienes pedidos aún',
-            style: AppTypography.h3.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: AppSpacing.sm),
           Padding(
@@ -80,7 +76,7 @@ class OrdersScreen extends ConsumerWidget {
             child: Text(
               'Cuando reserves un servicio o compres un producto aparecerá aquí.',
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
           ),
         ],
@@ -96,31 +92,35 @@ class _OrderCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusConfig = _getStatusConfig(appointment.status);
-    final _statusColor = statusConfig.color;
+    final statusColor = statusConfig.color;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: isDark
+            ? Border.all(color: AppColors.borderDark)
+            : Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header: Negocio + Status ──────────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: _statusColor.withOpacity(0.06),
+              color: statusColor.withValues(alpha: 0.06),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -131,20 +131,16 @@ class _OrderCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.storefront_outlined,
-                      color: AppColors.primary, size: 18),
+                  child: const Icon(Icons.storefront_outlined, color: AppColors.primary, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     appointment.businessName,
-                    style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.2,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, letterSpacing: -0.2),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -152,18 +148,18 @@ class _OrderCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor.withOpacity(0.12),
+                    color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(statusConfig.icon, color: _statusColor, size: 12),
+                      Icon(statusConfig.icon, color: statusColor, size: 12),
                       const SizedBox(width: 4),
                       Text(
                         statusConfig.label,
                         style: TextStyle(
-                          color: _statusColor,
+                          color: statusColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.2,
@@ -176,7 +172,6 @@ class _OrderCard extends ConsumerWidget {
             ),
           ),
 
-          // ── Body: Servicios ──────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -184,12 +179,11 @@ class _OrderCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.content_cut_rounded,
-                        size: 14, color: AppColors.textSecondary),
+                    const Icon(Icons.content_cut_rounded, size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 8),
                     Text(
                       'Servicios',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
@@ -205,16 +199,15 @@ class _OrderCard extends ConsumerWidget {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: isDark ? AppColors.surfaceVariantDark : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Text(
                         name,
-                        style: AppTypography.bodySmall.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
                         ),
                       ),
                     );
@@ -224,29 +217,26 @@ class _OrderCard extends ConsumerWidget {
             ),
           ),
 
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, color: Theme.of(context).dividerColor),
 
-          // ── Footer: precio + fecha ────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             child: Row(
               children: [
-                // Precio
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.attach_money_rounded,
-                          color: Color(0xFF10B981), size: 16),
+                      child: const Icon(Icons.attach_money_rounded, color: Color(0xFF10B981), size: 16),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       '\$${appointment.totalPrice.toStringAsFixed(2)}',
-                      style: AppTypography.titleMedium.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF10B981),
                       ),
@@ -254,15 +244,13 @@ class _OrderCard extends ConsumerWidget {
                   ],
                 ),
                 const Spacer(),
-                // Fecha
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined,
-                        size: 14, color: AppColors.textSecondary),
+                    Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       _formatDate(appointment.dateTime),
-                      style: AppTypography.bodySmall.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -274,7 +262,7 @@ class _OrderCard extends ConsumerWidget {
           ),
 
           if (appointment.status == 'pending' || appointment.status == 'confirmed') ...[
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            Divider(height: 1, color: Theme.of(context).dividerColor),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(

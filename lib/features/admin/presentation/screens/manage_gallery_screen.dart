@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/widgets/app_cached_image.dart';
@@ -23,7 +22,7 @@ class ManageGalleryScreen extends ConsumerWidget {
         elevation: 0,
         centerTitle: true,
         title: Text('Gestionar Galería',
-            style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -55,7 +54,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha:0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -82,7 +81,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha:0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -102,7 +101,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha:0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -122,7 +121,7 @@ class ManageGalleryScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha:0.6),
                           borderRadius: const BorderRadius.vertical(
                               bottom: Radius.circular(16)),
                         ),

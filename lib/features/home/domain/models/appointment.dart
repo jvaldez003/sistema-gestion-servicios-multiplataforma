@@ -11,6 +11,7 @@ class Appointment {
   final DateTime dateTime;
   final String professionalId;
   final String professionalName;
+  final String clientName;
   final String status; // pending, confirmed, completed, cancelled
   final DateTime createdAt;
 
@@ -25,6 +26,7 @@ class Appointment {
     required this.dateTime,
     required this.professionalId,
     required this.professionalName,
+    this.clientName = '',
     this.status = 'pending',
     required this.createdAt,
   });
@@ -41,6 +43,7 @@ class Appointment {
       dateTime: (map['dateTime'] as Timestamp).toDate(),
       professionalId: map['professionalId'] ?? '',
       professionalName: map['professionalName'] ?? '',
+      clientName: map['clientName'] ?? '',
       status: map['status'] ?? 'pending',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
     );
@@ -57,6 +60,7 @@ class Appointment {
       'dateTime': Timestamp.fromDate(dateTime),
       'professionalId': professionalId,
       'professionalName': professionalName,
+      'clientName': clientName,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
     };

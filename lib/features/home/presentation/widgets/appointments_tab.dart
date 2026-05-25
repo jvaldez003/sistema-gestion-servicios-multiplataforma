@@ -6,7 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+
 import '../../domain/models/appointment.dart';
 import '../providers/booking_providers.dart';
 import '../providers/booking_notifier.dart';
@@ -73,17 +73,17 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(_isProfessionalMode ? 'Mi Agenda' : 'Mis Citas', style: AppTypography.h2),
+                          Text(_isProfessionalMode ? 'Mi Agenda' : 'Mis Citas', style: Theme.of(context).textTheme.headlineMedium),
                           if (isProfessional)
-                            _buildModeToggle(),
+                            _buildModeToggle(context),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        _isProfessionalMode 
+                        _isProfessionalMode
                             ? 'Gestiona tus citas de hoy y próximos servicios'
                             : 'Revisa tu agenda y tus próximas reservas',
-                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -98,16 +98,16 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 sliver: SliverToBoxAdapter(
-                  child: _buildScheduleHeader(selectedAppointments.length),
+                  child: _buildScheduleHeader(context, selectedAppointments.length),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 sliver: selectedAppointments.isEmpty
-                    ? SliverToBoxAdapter(child: _buildEmptyState())
+                    ? SliverToBoxAdapter(child: _buildEmptyState(context))
                     : SliverList(
                         delegate: SliverChildBuilderDelegate(
-                          (context, index) => _buildAppointmentCard(selectedAppointments[index]),
+                          (context, index) => _buildAppointmentCard(context, selectedAppointments[index]),
                           childCount: selectedAppointments.length,
                         ),
                       ),
@@ -122,22 +122,25 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     );
   }
 
-  Widget _buildModeToggle() {
+  Widget _buildModeToggle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: isDark ? AppColors.surfaceVariantDark : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           _buildToggleButton(
+            context,
             icon: Icons.person_outline,
             label: 'Cliente',
             isSelected: !_isProfessionalMode,
             onTap: () => setState(() => _isProfessionalMode = false),
           ),
           _buildToggleButton(
+            context,
             icon: Icons.work_outline,
             label: 'Pro',
             isSelected: _isProfessionalMode,
@@ -148,7 +151,8 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     );
   }
 
-  Widget _buildToggleButton({
+  Widget _buildToggleButton(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required bool isSelected,
@@ -160,10 +164,10 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? Theme.of(context).cardTheme.color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
               : null,
         ),
         child: Row(
@@ -172,7 +176,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
             const SizedBox(width: 4),
             Text(
               label,
-              style: AppTypography.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
@@ -220,15 +224,15 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                               end: Alignment.bottomRight,
                             )
                           : null,
-                      color: isSelected ? null : Colors.white,
+                      color: isSelected ? null : Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: isSelected ? Colors.transparent : Colors.black.withOpacity(0.04),
+                        color: isSelected ? Colors.transparent : Colors.black.withValues(alpha: 0.04),
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -240,16 +244,16 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                       children: [
                         Text(
                           DateFormat('EEE', 'es').format(date).toUpperCase(),
-                          style: AppTypography.bodySmall.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
-                            color: isSelected ? Colors.white.withOpacity(0.8) : AppColors.textSecondary.withOpacity(0.6),
+                            color: isSelected ? Colors.white.withValues(alpha: 0.8) : AppColors.textSecondary.withValues(alpha: 0.6),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           date.day.toString(),
-                          style: AppTypography.titleMedium.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: isSelected ? Colors.white : AppColors.textPrimary,
@@ -299,7 +303,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
             children: [
               Text(
                 DateFormat('MMMM', 'es').format(_focusedDay).toUpperCase(),
-                style: AppTypography.bodySmall.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w900,
                   color: AppColors.primary,
@@ -307,7 +311,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               ),
               Text(
                 DateFormat('yyyy', 'es').format(_focusedDay),
-                style: AppTypography.h3.copyWith(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   height: 1.1,
                   fontWeight: FontWeight.bold,
                 ),
@@ -318,9 +322,15 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceVariantDark
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.borderDark
+                  : const Color(0xFFF1F5F9),
+            ),
           ),
           child: Row(
             children: [
@@ -363,9 +373,9 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         builder: (context, setModalState) {
           return Container(
             height: MediaQuery.of(context).size.height * 0.7,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             ),
             child: Column(
               children: [
@@ -374,7 +384,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -385,7 +395,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                     children: [
                       Text(
                         'Seleccionar Fecha',
-                        style: AppTypography.h3.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
@@ -421,13 +431,13 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                         headerStyle: HeaderStyle(
                           formatButtonVisible: false,
                           titleCentered: true,
-                          titleTextStyle: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                          titleTextStyle: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
                           leftChevronIcon: const Icon(Icons.chevron_left_rounded, color: AppColors.primary),
                           rightChevronIcon: const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
                         ),
                         calendarStyle: CalendarStyle(
                           todayDecoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           todayTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
@@ -452,7 +462,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     );
   }
 
-  Widget _buildScheduleHeader(int count) {
+  Widget _buildScheduleHeader(BuildContext context, int count) {
     return Row(
       children: [
         Container(
@@ -466,19 +476,19 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         const SizedBox(width: 12),
         Text(
           'Agenda para hoy',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
         if (count > 0)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '$count',
-              style: AppTypography.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
@@ -488,27 +498,30 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: isDark
+            ? Border.all(color: AppColors.borderDark)
+            : Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
         children: [
-          Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary.withOpacity(0.3), size: 48),
+          Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary.withValues(alpha: 0.3), size: 48),
           const SizedBox(height: 16),
           Text(
             'Sin citas para este día',
-            style: AppTypography.titleMedium.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             '¿Por qué no agendas algo nuevo hoy?',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary.withOpacity(0.7)),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary.withValues(alpha: 0.7)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -516,22 +529,27 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
     );
   }
 
-  Widget _buildAppointmentCard(Appointment appointment) {
+  Widget _buildAppointmentCard(BuildContext context, Appointment appointment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: isDark
+            ? Border.all(color: AppColors.borderDark)
+            : Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -539,21 +557,21 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
             width: 60,
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? AppColors.surfaceVariantDark : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               children: [
                 Text(
                   DateFormat('HH:mm').format(appointment.dateTime),
-                  style: AppTypography.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 Text(
                   appointment.dateTime.hour < 12 ? 'AM' : 'PM',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textSecondary,
@@ -569,7 +587,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
               children: [
                 Text(
                   _isProfessionalMode ? 'Cita con cliente' : appointment.businessName,
-                  style: AppTypography.titleMedium.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                   ),
@@ -582,7 +600,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                     Expanded(
                       child: Text(
                         appointment.serviceNames.join(', '),
-                        style: AppTypography.bodySmall.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
@@ -596,16 +614,18 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
                 Row(
                   children: [
                     Icon(
-                      _isProfessionalMode ? Icons.person_outline : Icons.person_pin_circle_outlined, 
-                      size: 12, 
-                      color: AppColors.textSecondary
+                      _isProfessionalMode ? Icons.person_outline : Icons.person_pin_circle_outlined,
+                      size: 12,
+                      color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _isProfessionalMode ? 'Cliente ID: ${appointment.userId.substring(0, 5)}...' : appointment.professionalName,
-                      style: AppTypography.bodySmall.copyWith(
+                      _isProfessionalMode
+                          ? (appointment.clientName.isNotEmpty ? appointment.clientName : appointment.userId.substring(0, 8))
+                          : appointment.professionalName,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 10,
-                        color: AppColors.textSecondary.withOpacity(0.8),
+                        color: AppColors.textSecondary.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -750,7 +770,7 @@ class _AppointmentsTabState extends ConsumerState<AppointmentsTab> {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 16),

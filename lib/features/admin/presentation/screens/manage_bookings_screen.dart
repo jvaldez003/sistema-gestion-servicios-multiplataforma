@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import 'package:intl/intl.dart';
+import '../../../home/domain/models/appointment.dart';
+import '../../../home/presentation/providers/booking_providers.dart';
 
 class ManageBookingsScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -18,6 +19,10 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appointmentsAsync = ref.watch(
+      businessAppointmentsProvider((widget.businessId, _selectedDate)),
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -25,7 +30,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
         elevation: 0,
         title: Text(
           'Gestión de Citas',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
@@ -33,7 +38,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
         children: [
           _buildDateSelector(),
           Expanded(
-            child: _buildBookingsList(),
+            child: _buildBookingsList(appointmentsAsync),
           ),
         ],
       ),
@@ -86,7 +91,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       date.day.toString(),
-                      style: AppTypography.titleLarge.copyWith(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: isSelected ? Colors.white : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -101,41 +106,44 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
     );
   }
 
-  Widget _buildBookingsList() {
-    final bookings = <Map<String, dynamic>>[];
-
-    if (bookings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy, size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
-            const SizedBox(height: 16),
-            Text(
-              'No hay citas para esta fecha',
-              style: AppTypography.titleMedium.copyWith(color: AppColors.textSecondary),
+  Widget _buildBookingsList(AsyncValue<List<Appointment>> appointmentsAsync) {
+    return appointmentsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text('Error al cargar citas', style: Theme.of(context).textTheme.bodyMedium),
+      ),
+      data: (appointments) {
+        if (appointments.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.event_busy, size: 64, color: AppColors.textSecondary.withValues(alpha:0.5)),
+                const SizedBox(height: 16),
+                Text(
+                  'No hay citas para esta fecha',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(24),
-      itemCount: bookings.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        final booking = bookings[index];
-        return _buildBookingCard(booking);
+        return ListView.separated(
+          padding: const EdgeInsets.all(24),
+          itemCount: appointments.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) => _buildBookingCard(appointments[index]),
+        );
       },
     );
   }
 
-  Widget _buildBookingCard(Map<String, dynamic> booking) {
+  Widget _buildBookingCard(Appointment appointment) {
     Color statusColor;
     String statusText;
-    
-    switch (booking['status']) {
+
+    switch (appointment.status) {
       case 'confirmed':
         statusColor = const Color(0xFF10B981);
         statusText = 'Confirmada';
@@ -149,6 +157,11 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
         statusText = 'Pendiente';
     }
 
+    final timeHour = DateFormat('h:mm').format(appointment.dateTime);
+    final timeAmPm = DateFormat('a').format(appointment.dateTime).toUpperCase();
+    final price = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0)
+        .format(appointment.totalPrice);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -156,7 +169,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha:0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -177,12 +190,12 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                   child: Column(
                     children: [
                       Text(
-                        booking['time']!.split(' ')[0],
-                        style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        timeHour,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        booking['time']!.split(' ')[1],
-                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                        timeAmPm,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -193,22 +206,22 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        booking['clientName']!,
-                        style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        appointment.serviceNames.join(', '),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        booking['service']!,
-                        style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                        appointment.professionalName,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
+                          const Icon(Icons.attach_money, size: 14, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
-                            booking['duration']!,
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                            price,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -218,7 +231,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -233,7 +246,7 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
               ],
             ),
           ),
-          if (booking['status'] == 'pending') ...[
+          if (appointment.status == 'pending') ...[
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -241,7 +254,12 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        await ref.read(bookingRepositoryProvider).updateAppointmentStatus(
+                          appointment.id!,
+                          'cancelled',
+                        );
+                      },
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFEF4444),
                       ),
@@ -250,7 +268,12 @@ class _ManageBookingsScreenState extends ConsumerState<ManageBookingsScreen> {
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        await ref.read(bookingRepositoryProvider).updateAppointmentStatus(
+                          appointment.id!,
+                          'confirmed',
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,

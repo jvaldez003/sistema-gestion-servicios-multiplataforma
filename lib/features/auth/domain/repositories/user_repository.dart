@@ -5,4 +5,5 @@ abstract class UserRepository {
   Stream<AppUser?> getUserStream(String userId);
   Future<void> updateUserPoints(String userId, int points);
   Future<void> updateUserProfile(String userId, {String? name, String? email, String? photoUrl, String? phoneNumber});
+  Future<List<AppUser>> searchUsers(String query);
 }

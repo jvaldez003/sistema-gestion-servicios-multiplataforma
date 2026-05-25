@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
@@ -11,6 +12,9 @@ class AppCachedImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final IconData errorIcon;
 
+  static final Map<String, Uint8List> _decodedCache = {};
+  static const int _maxCacheEntries = 40;
+
   const AppCachedImage({
     super.key,
     required this.imageUrl,
@@ -21,53 +25,76 @@ class AppCachedImage extends StatelessWidget {
     this.errorIcon = Icons.broken_image_outlined,
   });
 
+  static Uint8List? _decodeBase64(String imageUrl) {
+    final cached = _decodedCache[imageUrl];
+    if (cached != null) return cached;
+
+    try {
+      String base64Content = imageUrl;
+      if (base64Content.contains(',')) {
+        base64Content = base64Content.split(',').last;
+      }
+      final bytes = base64Decode(base64Content);
+      if (_decodedCache.length >= _maxCacheEntries) {
+        _decodedCache.remove(_decodedCache.keys.first);
+      }
+      _decodedCache[imageUrl] = bytes;
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (imageUrl == null || imageUrl!.isEmpty) {
       return _buildPlaceholder();
     }
 
-    // Check if it's a Base64 string
-    final bool isBase64 = imageUrl!.startsWith('data:image') || 
-                          (!imageUrl!.startsWith('http') && imageUrl!.length > 100);
+    final url = imageUrl!;
+    final bool isBase64 = url.startsWith('data:image') ||
+        (!url.startsWith('http') && url.length > 100);
 
     Widget imageWidget;
 
     if (isBase64) {
-      try {
-        String base64Content = imageUrl!;
-        if (base64Content.contains(',')) {
-          base64Content = base64Content.split(',').last;
-        }
-        imageWidget = Image.memory(
-          base64Decode(base64Content),
-          width: width,
-          height: height,
-          fit: fit,
-          errorBuilder: (context, error, stackTrace) => _buildError(),
-        );
-      } catch (e) {
-        imageWidget = _buildError();
-      }
+      final bytes = _decodeBase64(url);
+      imageWidget = bytes == null
+          ? _buildError()
+          : Image.memory(
+              bytes,
+              key: ValueKey(url),
+              width: width,
+              height: height,
+              fit: fit,
+              gaplessPlayback: true,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (context, error, stackTrace) => _buildError(),
+            );
     } else {
       imageWidget = CachedNetworkImage(
-        imageUrl: imageUrl!,
+        key: ValueKey(url),
+        imageUrl: url,
         width: width,
         height: height,
         fit: fit,
+        cacheKey: url,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        useOldImageOnUrlChange: true,
         placeholder: (context, url) => _buildLoading(),
         errorWidget: (context, url, error) => _buildError(),
       );
     }
 
     if (borderRadius != null) {
-      return ClipRRect(
+      imageWidget = ClipRRect(
         borderRadius: borderRadius!,
         child: imageWidget,
       );
     }
 
-    return imageWidget;
+    return RepaintBoundary(child: imageWidget);
   }
 
   Widget _buildPlaceholder() {
@@ -88,7 +115,7 @@ class AppCachedImage extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.image_not_supported_outlined,
-          color: AppColors.textSecondary.withOpacity(0.4),
+          color: AppColors.textSecondary.withValues(alpha: 0.4),
           size: (height ?? 100) * 0.3,
         ),
       ),
@@ -121,17 +148,16 @@ class AppCachedImage extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2), // Light red tint for error
+        color: const Color(0xFFFEF2F2),
         borderRadius: borderRadius,
       ),
       child: Center(
         child: Icon(
           errorIcon,
-          color: AppColors.error.withOpacity(0.5),
+          color: AppColors.error.withValues(alpha: 0.5),
           size: (height ?? 100) * 0.3,
         ),
       ),
     );
   }
 }
-

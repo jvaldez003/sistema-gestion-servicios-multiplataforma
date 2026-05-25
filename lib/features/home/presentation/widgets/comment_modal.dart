@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/models/post.dart';
 import '../providers/post_providers.dart';
@@ -81,7 +81,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -91,12 +91,12 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
               children: [
                 Text(
                   'Comentarios',
-                  style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   widget.post.commentsCount.toString(),
-                  style: AppTypography.titleLarge.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.textSecondary),
                 ),
                 const Spacer(),
                 _buildActionButton(Icons.close_rounded, () => Navigator.pop(context)),
@@ -113,15 +113,15 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.chat_bubble_outline_rounded, 
-                             size: 48, color: AppColors.textSecondary.withOpacity(0.3)),
+                             size: 48, color: AppColors.textSecondary.withValues(alpha:0.3)),
                         const SizedBox(height: 16),
                         Text(
                           'Aún no hay comentarios',
-                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                         ),
                         Text(
                           'Sé el primero en comentar',
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary.withOpacity(0.7)),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary.withValues(alpha: 0.7)),
                         ),
                       ],
                     ),
@@ -153,12 +153,12 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                                   children: [
                                     Text(
                                       comment.userName,
-                                      style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       DateFormat('d MMM', 'es').format(comment.createdAt),
-                                      style: AppTypography.bodySmall.copyWith(
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: AppColors.textSecondary,
                                         fontSize: 10,
                                       ),
@@ -168,7 +168,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                                 const SizedBox(height: 4),
                                 Text(
                                   comment.text,
-                                  style: AppTypography.bodyMedium,
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
                             ),
@@ -202,7 +202,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                         hintText: 'Añade un comentario...',
                         border: InputBorder.none,
                       ),
-                      style: AppTypography.bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                 ),

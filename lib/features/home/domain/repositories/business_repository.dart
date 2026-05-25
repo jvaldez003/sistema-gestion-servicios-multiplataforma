@@ -3,6 +3,7 @@ import '../../domain/models/business.dart';
 abstract class BusinessRepository {
   Future<void> createBusiness(Business business);
   Future<Business?> getBusinessByOwnerId(String ownerId);
+  Stream<Business?> getBusinessByOwnerIdStream(String ownerId);
   Stream<Business?> getBusinessStream(String businessId);
   Stream<List<Business>> getBusinessesStream();
 

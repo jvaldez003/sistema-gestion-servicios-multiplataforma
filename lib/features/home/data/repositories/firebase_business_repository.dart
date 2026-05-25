@@ -35,18 +35,9 @@ class FirebaseBusinessRepository implements BusinessRepository {
     });
   }
 
-  @override
-  Future<Business?> getBusinessByOwnerId(String ownerId) async {
-    final snapshot = await _firestore
-        .collection('businesses')
-        .where('ownerId', isEqualTo: ownerId)
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isEmpty) return null;
-
-    final doc = snapshot.docs.first;
-    final data = doc.data();
+  Business? _businessFromDoc(DocumentSnapshot doc) {
+    if (!doc.exists) return null;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
     return Business(
       id: doc.id,
       name: data['name'] ?? '',
@@ -66,7 +57,35 @@ class FirebaseBusinessRepository implements BusinessRepository {
       professionalCount: data['professionalCount'] ?? 0,
       followerCount: data['followerCount'] ?? 0,
       galleryImages: List<String>.from(data['galleryImages'] ?? []),
+      address: data['address'],
+      phone: data['phone'],
+      openingHours: data['openingHours'],
     );
+  }
+
+  @override
+  Future<Business?> getBusinessByOwnerId(String ownerId) async {
+    final snapshot = await _firestore
+        .collection('businesses')
+        .where('ownerId', isEqualTo: ownerId)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return _businessFromDoc(snapshot.docs.first);
+  }
+
+  @override
+  Stream<Business?> getBusinessByOwnerIdStream(String ownerId) {
+    return _firestore
+        .collection('businesses')
+        .where('ownerId', isEqualTo: ownerId)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return null;
+      return _businessFromDoc(snapshot.docs.first);
+    });
   }
 
   @override
@@ -75,30 +94,7 @@ class FirebaseBusinessRepository implements BusinessRepository {
         .collection('businesses')
         .doc(businessId)
         .snapshots()
-        .map((doc) {
-      if (!doc.exists) return null;
-      final data = doc.data()!;
-      return Business(
-        id: doc.id,
-        name: data['name'] ?? '',
-        category: data['category'] ?? '',
-        description: data['description'] ?? '',
-        imageUrl: data['imageUrl'] ?? '',
-        avatarUrl: data['avatarUrl'] ?? '',
-        rating: (data['rating'] ?? 0.0).toDouble(),
-        totalReviews: data['totalReviews'] ?? 0,
-        distance: (data['distance'] ?? 0.0).toDouble(),
-        isVerified: data['isVerified'] ?? false,
-        isTop: data['isTop'] ?? false,
-        startingPrice: (data['startingPrice'] ?? 0.0).toDouble(),
-        tags: List<String>.from(data['tags'] ?? []),
-        likes: data['likes'] ?? 0,
-        comments: data['comments'] ?? 0,
-        professionalCount: data['professionalCount'] ?? 0,
-        followerCount: data['followerCount'] ?? 0,
-        galleryImages: List<String>.from(data['galleryImages'] ?? []),
-      );
-    });
+        .map(_businessFromDoc);
   }
 
   @override

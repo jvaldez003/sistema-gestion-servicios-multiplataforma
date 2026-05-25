@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 import '../widgets/content_stepper.dart';
 
@@ -278,8 +277,8 @@ class _NewProductFlowState extends ConsumerState<NewProductFlow> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(_nameController.text,
-                  style: AppTypography.titleLarge
-                      .copyWith(fontWeight: FontWeight.bold)),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text('\$${_priceController.text}',
                   style: const TextStyle(

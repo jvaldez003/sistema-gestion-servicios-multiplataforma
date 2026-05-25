@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import 'step_indicator.dart';
 
 class ContentStepper extends StatelessWidget {
@@ -70,8 +69,8 @@ class ContentStepper extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppTypography.h3
-                            .copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         'Paso $currentStep de $totalSteps',

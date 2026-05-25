@@ -24,7 +24,7 @@ class FirebaseTeamRepository implements TeamRepository {
         .doc(businessId)
         .collection('team')
         .doc(memberId)
-        .update(member);
+        .set(member, SetOptions(merge: true));
   }
 
   @override
@@ -103,6 +103,16 @@ class FirebaseTeamRepository implements TeamRepository {
         .doc(businessId)
         .collection('team')
         .add(member);
+  }
+
+  @override
+  Future<void> setTeamMember(String businessId, String memberId, Map<String, dynamic> member) async {
+    await _firestore
+        .collection('businesses')
+        .doc(businessId)
+        .collection('team')
+        .doc(memberId)
+        .set(member);
   }
 
   @override

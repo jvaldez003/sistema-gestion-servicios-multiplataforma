@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 
 class AddMemberFlow extends ConsumerStatefulWidget {
@@ -119,7 +118,7 @@ class _AddMemberFlowState extends ConsumerState<AddMemberFlow> {
               children: [
                 Text(widget.existingMember != null ? 'Editar miembro' : 'Agregar miembro',
                     style:
-                        AppTypography.h3.copyWith(fontWeight: FontWeight.bold)),
+                        Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child:

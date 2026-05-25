@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../providers/admin_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
 
@@ -21,7 +20,7 @@ class ManageServicesScreen extends ConsumerWidget {
         elevation: 0,
         centerTitle: true,
         title: Text('Gestionar Servicios',
-            style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),

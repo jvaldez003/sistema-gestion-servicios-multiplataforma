@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../providers/business_registration_provider.dart';
 import 'register_business_step_two.dart';
 
@@ -60,7 +59,7 @@ class _RegisterBusinessStepOneState
         title: Text(
           'Registra tu negocio',
           style:
-              AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+              Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -79,7 +78,7 @@ class _RegisterBusinessStepOneState
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -92,12 +91,12 @@ class _RegisterBusinessStepOneState
 
               Text(
                 'Información del negocio',
-                style: AppTypography.h3.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
                 'Cuéntanos sobre tu negocio',
-                style: AppTypography.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -108,7 +107,7 @@ class _RegisterBusinessStepOneState
                   RichText(
                     text: TextSpan(
                       text: 'Nombre del negocio ',
-                      style: AppTypography.titleMedium.copyWith(fontSize: 14),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
                       children: const [
                         TextSpan(
                           text: '*',
@@ -150,7 +149,7 @@ class _RegisterBusinessStepOneState
                   RichText(
                     text: TextSpan(
                       text: 'Categoría ',
-                      style: AppTypography.titleMedium.copyWith(fontSize: 14),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
                       children: const [
                         TextSpan(
                           text: '*',
@@ -198,7 +197,7 @@ class _RegisterBusinessStepOneState
                               const SizedBox(height: 8),
                               Text(
                                 cat['name'],
-                                style: AppTypography.bodySmall.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.w500,
@@ -232,7 +231,7 @@ class _RegisterBusinessStepOneState
                 child: Text(
                   'Continuar',
                   style:
-                      AppTypography.titleMedium.copyWith(color: Colors.white),
+                      Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -279,7 +278,7 @@ class _RegisterBusinessStepOneState
         Text(
           'Paso $step de 3',
           style:
-              AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );

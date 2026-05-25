@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'app_colors.dart';
 
 class AppTypography {
@@ -20,17 +19,20 @@ class AppTypography {
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
         height: 1.2,
+        letterSpacing: -0.5,
       ),
       displayMedium: GoogleFonts.inter(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: AppColors.textPrimary,
         height: 1.2,
+        letterSpacing: -0.3,
       ),
       titleLarge: GoogleFonts.inter(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
+        letterSpacing: -0.2,
       ),
       titleMedium: GoogleFonts.inter(
         fontSize: 16,
@@ -53,10 +55,31 @@ class AppTypography {
         color: AppColors.textSecondary,
       ),
       labelLarge: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
         color: AppColors.textLight,
+        letterSpacing: 0.8,
       ),
+      labelMedium: GoogleFonts.inter(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  static TextTheme get darkTextTheme {
+    return textTheme.copyWith(
+      displayLarge: textTheme.displayLarge?.copyWith(color: AppColors.textOnDark),
+      displayMedium: textTheme.displayMedium?.copyWith(color: AppColors.textOnDark),
+      titleLarge: textTheme.titleLarge?.copyWith(color: AppColors.textOnDark),
+      titleMedium: textTheme.titleMedium?.copyWith(color: AppColors.textOnDark),
+      bodyLarge: textTheme.bodyLarge?.copyWith(color: AppColors.textOnDark),
+      bodyMedium: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondaryDark),
+      bodySmall: textTheme.bodySmall?.copyWith(color: AppColors.textSecondaryDark),
+      labelLarge: textTheme.labelLarge?.copyWith(color: Colors.white),
+      labelMedium: textTheme.labelMedium?.copyWith(color: AppColors.textSecondaryDark),
     );
   }
 }

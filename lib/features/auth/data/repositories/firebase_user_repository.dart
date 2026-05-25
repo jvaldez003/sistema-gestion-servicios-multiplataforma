@@ -57,4 +57,50 @@ class FirebaseUserRepository implements UserRepository {
       await _firestore.collection('users').doc(userId).set(data, SetOptions(merge: true));
     }
   }
+
+  @override
+  Future<List<AppUser>> searchUsers(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return [];
+
+    final Set<String> seenIds = {};
+    final List<AppUser> results = [];
+
+    AppUser toUser(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+      final data = doc.data();
+      return AppUser(
+        id: doc.id,
+        email: data['email'] ?? '',
+        name: data['name'],
+        phoneNumber: data['phoneNumber'],
+        photoUrl: data['photoUrl'],
+        points: data['points'] ?? 0,
+        favoriteIds: List<String>.from(data['favoriteIds'] ?? []),
+      );
+    }
+
+    // Email exact match
+    final byEmail = await _firestore
+        .collection('users')
+        .where('email', isEqualTo: trimmed.toLowerCase())
+        .limit(10)
+        .get();
+    for (final doc in byEmail.docs) {
+      if (seenIds.add(doc.id)) results.add(toUser(doc));
+    }
+
+    // Name prefix search
+    final byName = await _firestore
+        .collection('users')
+        .orderBy('name')
+        .startAt([trimmed])
+        .endAt(['$trimmed'])
+        .limit(10)
+        .get();
+    for (final doc in byName.docs) {
+      if (seenIds.add(doc.id)) results.add(toUser(doc));
+    }
+
+    return results;
+  }
 }

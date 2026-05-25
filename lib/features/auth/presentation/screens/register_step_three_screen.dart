@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/registration_provider.dart';
 import '../providers/auth_providers.dart';
+import '../widgets/auth_shared_widgets.dart';
 
 class RegisterStepThreeScreen extends ConsumerStatefulWidget {
   const RegisterStepThreeScreen({super.key});
@@ -39,13 +40,7 @@ class _RegisterStepThreeScreenState
           phoneNumber: registrationData.phoneNumber,
         );
       }
-
-      // Reset registration data
       ref.read(registrationProvider.notifier).reset();
-
-      // Navigate to home or show success
-      // El AuthNotifier debería manejar la redirección si usas un listener en main.dart
-      // Pero por ahora, podemos cerrar los pasos de registro
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (authState.status == AuthStatus.error && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,214 +57,187 @@ class _RegisterStepThreeScreenState
     final registrationData = ref.watch(registrationProvider);
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.loading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Crear cuenta',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        centerTitle: false,
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text('Crear cuenta')),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Stepper Indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AuthStepIndicator(current: 3),
+            const SizedBox(height: AppSpacing.xl),
+
+            // ── Check icon ────────────────────────────────────────────
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.positiveGreen.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppColors.positiveGreen,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            Text(
+              '¡Casi listo!',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Solo necesitamos tu confirmación para completar el registro',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondary,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            // ── Summary card ──────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: isDark
+                    ? Border.all(color: AppColors.borderDark)
+                    : null,
+                boxShadow: isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStepCircle(1, false, isCompleted: true),
-                  _buildStepLine(isCompleted: true),
-                  _buildStepCircle(2, false, isCompleted: true),
-                  _buildStepLine(isCompleted: true),
-                  _buildStepCircle(3, true),
+                  Text(
+                    'Resumen de tu cuenta',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.sm),
+                  _SummaryRow(label: 'Nombre', value: registrationData.name),
+                  const SizedBox(height: AppSpacing.sm),
+                  _SummaryRow(label: 'Email', value: registrationData.email),
+                  const SizedBox(height: AppSpacing.sm),
+                  _SummaryRow(
+                    label: 'Teléfono',
+                    value: registrationData.phoneNumber,
+                  ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Paso 3 de 3 · Finalizar',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+            ),
 
-              const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
 
-              // Success Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  color: AppColors.success,
-                  size: 50,
-                ),
-              ),
+            // ── Checkboxes ────────────────────────────────────────────
+            _CheckboxRow(
+              value: _acceptedTerms,
+              onChanged: (val) => setState(() => _acceptedTerms = val ?? false),
+              text: 'Acepto los ',
+              linkText: 'Términos y Condiciones',
+              suffixText: ' de FlowServ',
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _CheckboxRow(
+              value: _acceptedPrivacy,
+              onChanged: (val) =>
+                  setState(() => _acceptedPrivacy = val ?? false),
+              text: 'Acepto la ',
+              linkText: 'Política de Privacidad',
+              suffixText: ' y el tratamiento de mis datos',
+            ),
 
-              const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.xxl),
 
-              // Title and Description
-              Text(
-                '¡Casi listo!',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontSize: 28,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Solo necesitamos tu confirmación para completar el registro',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              // Summary Card
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Resumen de tu cuenta',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _buildSummaryRow('Nombre:', registrationData.name),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildSummaryRow('Email:', registrationData.email),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildSummaryRow('Teléfono:', registrationData.phoneNumber),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              // Checkboxes
-              _buildCheckboxRow(
-                value: _acceptedTerms,
-                onChanged: (val) {
-                  setState(() => _acceptedTerms = val ?? false);
-                },
-                text: 'Acepto los ',
-                linkText: 'Términos y Condiciones',
-                suffixText: ' de FlowServ',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _buildCheckboxRow(
-                value: _acceptedPrivacy,
-                onChanged: (val) {
-                  setState(() => _acceptedPrivacy = val ?? false);
-                },
-                text: 'Acepto la ',
-                linkText: 'Política de Privacidad',
-                suffixText: ' y el tratamiento de mis datos',
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Submit Button
-              PrimaryButton(
-                text: 'Crear mi cuenta',
-                isLoading: isLoading,
-                onPressed: (_acceptedTerms && _acceptedPrivacy && !isLoading)
-                    ? _handleRegistration
-                    : null,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-            ],
-          ),
+            AppButton(
+              label: 'Crear mi cuenta',
+              isLoading: isLoading,
+              onPressed: (_acceptedTerms && _acceptedPrivacy && !isLoading)
+                  ? _handleRegistration
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildStepCircle(int step, bool isActive, {bool isCompleted = false}) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: (isActive || isCompleted) ? AppColors.primary : AppColors.border,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: isCompleted
-            ? const Icon(Icons.check, color: Colors.white, size: 20)
-            : Text(
-                step.toString(),
-                style: TextStyle(
-                  color: isActive ? Colors.white : AppColors.textSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-      ),
-    );
-  }
+// ── Local helpers ─────────────────────────────────────────────────────────────
 
-  Widget _buildStepLine({bool isCompleted = false}) {
-    return Container(
-      width: 40,
-      height: 3,
-      color: isCompleted ? AppColors.primary : AppColors.border,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-    );
-  }
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryRow({required this.label, required this.value});
 
-  Widget _buildSummaryRow(String label, String value) {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondary,
               ),
         ),
         Text(
           value.isEmpty ? 'N/A' : value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
               ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildCheckboxRow({
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-    required String text,
-    required String linkText,
-    required String suffixText,
-  }) {
+class _CheckboxRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final String text;
+  final String linkText;
+  final String suffixText;
+
+  const _CheckboxRow({
+    required this.value,
+    required this.onChanged,
+    required this.text,
+    required this.linkText,
+    required this.suffixText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,10 +258,10 @@ class _RegisterStepThreeScreenState
           child: RichText(
             text: TextSpan(
               text: text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(height: 1.4),
               children: [
                 TextSpan(
                   text: linkText,
@@ -311,4 +279,3 @@ class _RegisterStepThreeScreenState
     );
   }
 }
-

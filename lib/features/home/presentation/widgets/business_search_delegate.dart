@@ -60,7 +60,7 @@ class BusinessSearchDelegate extends SearchDelegate<Business?> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.search_off_rounded, size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
+              Icon(Icons.search_off_rounded, size: 64, color: AppColors.textSecondary.withValues(alpha:0.5)),
               const SizedBox(height: 16),
               Text(
                 'No se pudo encontrar el negocio que buscas',

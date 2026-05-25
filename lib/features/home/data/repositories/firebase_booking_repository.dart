@@ -10,14 +10,35 @@ class FirebaseBookingRepository implements BookingRepository {
 
   @override
   Future<void> createAppointment(Appointment appointment) async {
-    // We use a transaction to ensure no double booking if we implement slot validation here
+    final conflict = await _firestore
+        .collection('appointments')
+        .where('professionalId', isEqualTo: appointment.professionalId)
+        .where('dateTime', isEqualTo: Timestamp.fromDate(appointment.dateTime))
+        .where('status', whereIn: ['pending', 'confirmed'])
+        .limit(1)
+        .get();
+
+    if (conflict.docs.isNotEmpty) {
+      throw Exception('Este horario ya fue reservado. Por favor elige otro.');
+    }
+
     await _firestore.runTransaction((transaction) async {
-      // Create the appointment document
       final appointmentRef = _firestore.collection('appointments').doc();
       transaction.set(appointmentRef, appointment.toMap());
-      
-      // We could also mark the slot as occupied in a sub-collection for faster lookup
-      // businesses/{businessId}/slots/{date}/{slotId}
+    });
+
+    // Notify the user that their booking was created
+    await _firestore
+        .collection('users')
+        .doc(appointment.userId)
+        .collection('notifications')
+        .add({
+      'title': 'Cita agendada',
+      'body': 'Tu cita de ${appointment.serviceNames.join(', ')} fue agendada exitosamente.',
+      'type': 'booking_created',
+      'isRead': false,
+      'data': {'businessId': appointment.businessId},
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -81,6 +102,23 @@ class FirebaseBookingRepository implements BookingRepository {
 
 
   @override
+  Stream<List<Appointment>> getBusinessAppointmentsInRange(
+      String businessId, DateTime start, DateTime end) {
+    return _firestore
+        .collection('appointments')
+        .where('businessId', isEqualTo: businessId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => Appointment.fromMap(doc.data(), doc.id))
+          .where((appt) =>
+              !appt.dateTime.isBefore(start) && appt.dateTime.isBefore(end))
+          .toList()
+        ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    });
+  }
+
+  @override
   Future<bool> isSlotAvailable(String professionalId, DateTime dateTime, Duration duration) async {
     final endDateTime = dateTime.add(duration);
 
@@ -113,10 +151,64 @@ class FirebaseBookingRepository implements BookingRepository {
 
   @override
   Future<void> updateAppointmentStatus(String appointmentId, String status) async {
-    await _firestore
-        .collection('appointments')
-        .doc(appointmentId)
-        .update({'status': status});
+    // Read current status before updating to detect already-completed appointments
+    final docRef = _firestore.collection('appointments').doc(appointmentId);
+    final currentDoc = await docRef.get();
+    final wasAlreadyCompleted = currentDoc.data()?['status'] == 'completed';
+
+    await docRef.update({'status': status});
+
+    // Notify user of status change and grant points on completion
+    try {
+      final doc = await docRef.get();
+      final data = doc.data();
+      if (data != null) {
+        final userId = data['userId'] as String?;
+        final serviceNames = List<String>.from(data['serviceNames'] ?? []);
+        if (userId != null && userId.isNotEmpty) {
+          String title, body;
+          if (status == 'confirmed') {
+            title = 'Cita confirmada';
+            body = 'Tu cita de ${serviceNames.join(', ')} fue confirmada.';
+          } else if (status == 'cancelled') {
+            title = 'Cita cancelada';
+            body = 'Tu cita de ${serviceNames.join(', ')} fue cancelada.';
+          } else if (status == 'completed') {
+            title = 'Servicio completado';
+            body = '${serviceNames.join(', ')} completado. ¡Ganaste 10 puntos de fidelidad!';
+            // Only grant points if this is a new completion (not a duplicate call)
+            if (!wasAlreadyCompleted) {
+              await _firestore.collection('users').doc(userId).update({
+                'points': FieldValue.increment(10),
+              });
+              await _firestore.collection('users').doc(userId).collection('points_history').add({
+                'points': 10,
+                'reason': 'Servicio completado: ${serviceNames.join(', ')}',
+                'type': 'earned',
+                'appointmentId': appointmentId,
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+            }
+          } else {
+            return;
+          }
+          await _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('notifications')
+              .add({
+            'title': title,
+            'body': body,
+            'type': 'booking_status',
+            'isRead': false,
+            'data': {'appointmentId': appointmentId},
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+    } catch (_) {
+      // Notification/points failure should not break the status update
+    }
   }
 
   @override

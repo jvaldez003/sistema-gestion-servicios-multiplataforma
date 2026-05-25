@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../home/domain/models/appointment.dart';
+import '../providers/admin_providers.dart';
 
 class AdminFinancesScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -16,8 +18,33 @@ class AdminFinancesScreen extends ConsumerStatefulWidget {
 class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
   String _selectedFilter = 'Esta semana';
 
+  (DateTime, DateTime) _getDateRange() {
+    final now = DateTime.now();
+    switch (_selectedFilter) {
+      case 'Hoy':
+        final start = DateTime(now.year, now.month, now.day);
+        return (start, start.add(const Duration(days: 1)));
+      case 'Este mes':
+        return (
+          DateTime(now.year, now.month, 1),
+          DateTime(now.year, now.month + 1, 1),
+        );
+      case 'Este año':
+        return (DateTime(now.year, 1, 1), DateTime(now.year + 1, 1, 1));
+      default: // 'Esta semana'
+        final weekday = now.weekday;
+        final start = DateTime(now.year, now.month, now.day - (weekday - 1));
+        return (start, start.add(const Duration(days: 7)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final (start, end) = _getDateRange();
+    final appointmentsAsync = ref.watch(
+      adminFinancesProvider((widget.businessId, start, end)),
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -25,7 +52,7 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
         elevation: 0,
         title: Text(
           'Finanzas',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
@@ -37,13 +64,25 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
             children: [
               _buildFilterSelector(),
               const SizedBox(height: 24),
-              _buildMainStats(),
-              const SizedBox(height: 32),
-              _buildChartSection(),
-              const SizedBox(height: 32),
-              _buildPaymentMethods(),
-              const SizedBox(height: 32),
-              _buildRecentTransactions(),
+              appointmentsAsync.when(
+                loading: () => const Center(child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                )),
+                error: (e, _) => _buildMainStats([]),
+                data: (appointments) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMainStats(appointments),
+                    const SizedBox(height: 32),
+                    _buildChartSection(appointments, start),
+                    const SizedBox(height: 32),
+                    _buildPaymentMethods(),
+                    const SizedBox(height: 32),
+                    _buildRecentTransactions(appointments),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -88,7 +127,11 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
     );
   }
 
-  Widget _buildMainStats() {
+  Widget _buildMainStats(List<Appointment> appointments) {
+    final active = appointments.where((a) => a.status != 'cancelled').toList();
+    final total = active.fold<double>(0, (sum, a) => sum + a.totalPrice);
+    final fmt = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -96,7 +139,7 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha:0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -107,12 +150,12 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
         children: [
           Text(
             'Ingresos Totales',
-            style: AppTypography.bodyMedium.copyWith(color: Colors.white70),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70),
           ),
           const SizedBox(height: 8),
           Text(
-            '\$0.00',
-            style: AppTypography.h1.copyWith(
+            fmt.format(total),
+            style: Theme.of(context).textTheme.displayLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
@@ -121,8 +164,8 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSubStat('Servicios', '\$0.00', Icons.cut),
-              _buildSubStat('Productos', '\$0.00', Icons.inventory_2),
+              _buildSubStat('Servicios', fmt.format(total), Icons.cut),
+              _buildSubStat('Citas', '${active.length}', Icons.event_available),
             ],
           ),
         ],
@@ -136,7 +179,7 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
@@ -147,11 +190,11 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           children: [
             Text(
               label,
-              style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
             ),
             Text(
               value,
-              style: AppTypography.titleMedium.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -162,13 +205,32 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
     );
   }
 
-  Widget _buildChartSection() {
+  Widget _buildChartSection(List<Appointment> appointments, DateTime _) {
+    final labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    final today = DateTime.now();
+    final weekday = today.weekday;
+    final weekStart = DateTime(today.year, today.month, today.day - (weekday - 1));
+
+    // Calculate daily revenue for each day of the week starting at weekStart
+    final dailyRevenue = List.generate(7, (i) {
+      final day = weekStart.add(Duration(days: i));
+      return appointments
+          .where((a) =>
+              a.status != 'cancelled' &&
+              a.dateTime.year == day.year &&
+              a.dateTime.month == day.month &&
+              a.dateTime.day == day.day)
+          .fold<double>(0, (sum, a) => sum + a.totalPrice);
+    });
+
+    final maxRevenue = dailyRevenue.reduce((a, b) => a > b ? a : b);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Flujo de Ingresos',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -182,15 +244,14 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildBar(0.0, 'Lun'),
-              _buildBar(0.0, 'Mar'),
-              _buildBar(0.0, 'Mié'),
-              _buildBar(0.0, 'Jue'),
-              _buildBar(0.0, 'Vie', isActive: true),
-              _buildBar(0.0, 'Sáb'),
-              _buildBar(0.0, 'Dom'),
-            ],
+            children: List.generate(7, (i) {
+              final day = weekStart.add(Duration(days: i));
+              final isActive = day.year == today.year &&
+                  day.month == today.month &&
+                  day.day == today.day;
+              final pct = maxRevenue > 0 ? dailyRevenue[i] / maxRevenue : 0.0;
+              return _buildBar(pct, labels[i], isActive: isActive);
+            }),
           ),
         ),
       ],
@@ -228,7 +289,7 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
       children: [
         Text(
           'Métodos de Pago',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Row(
@@ -269,38 +330,40 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           Text(
             percentage,
             style:
-                AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: AppTypography.bodySmall
-                .copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRecentTransactions() {
-    final transactions = <Map<String, String>>[];
+  Widget _buildRecentTransactions(List<Appointment> appointments) {
+    final active = appointments.where((a) => a.status != 'cancelled').toList();
+    final fmt = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
+    final dateFmt = DateFormat('d MMM, h:mm a', 'es');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Transacciones Recientes',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        if (transactions.isEmpty)
+        if (active.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 32),
             child: Center(
               child: Text(
                 'No hay transacciones recientes',
-                style: AppTypography.bodyMedium
-                    .copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
             ),
           )
@@ -308,28 +371,21 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: transactions.length,
+            itemCount: active.length,
             separatorBuilder: (context, index) => const Divider(height: 24),
             itemBuilder: (context, index) {
-              final t = transactions[index];
-              final isPositive = t['amount']!.startsWith('+');
+              final appt = active[index];
               return Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isPositive
-                          ? const Color(0xFFE0F2FE)
-                          : const Color(0xFFFEE2E2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE0F2FE),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      isPositive
-                          ? Icons.arrow_downward_rounded
-                          : Icons.arrow_upward_rounded,
-                      color: isPositive
-                          ? const Color(0xFF0284C7)
-                          : const Color(0xFFEF4444),
+                    child: const Icon(
+                      Icons.arrow_downward_rounded,
+                      color: Color(0xFF0284C7),
                       size: 20,
                     ),
                   ),
@@ -339,25 +395,24 @@ class _AdminFinancesScreenState extends ConsumerState<AdminFinancesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          t['title']!,
-                          style: AppTypography.bodyLarge
-                              .copyWith(fontWeight: FontWeight.bold),
+                          appt.serviceNames.join(', '),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          '${t['method']} • ${t['time']}',
-                          style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.textSecondary),
+                          '${appt.professionalName} • ${dateFmt.format(appt.dateTime)}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
                   ),
                   Text(
-                    t['amount']!,
-                    style: AppTypography.titleMedium.copyWith(
+                    '+${fmt.format(appt.totalPrice)}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isPositive
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                      color: const Color(0xFF10B981),
                     ),
                   ),
                 ],

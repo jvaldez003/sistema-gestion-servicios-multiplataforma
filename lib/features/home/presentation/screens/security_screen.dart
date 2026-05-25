@@ -1,8 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -23,16 +24,16 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Cambiar contraseña',
-          style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildPasswordField(currentCtrl, 'Contraseña actual'),
+            _buildPasswordField(ctx, currentCtrl, 'Contraseña actual'),
             const SizedBox(height: 12),
-            _buildPasswordField(newCtrl, 'Nueva contraseña'),
+            _buildPasswordField(ctx, newCtrl, 'Nueva contraseña'),
             const SizedBox(height: 12),
-            _buildPasswordField(confirmCtrl, 'Confirmar nueva contraseña'),
+            _buildPasswordField(ctx, confirmCtrl, 'Confirmar nueva contraseña'),
           ],
         ),
         actions: [
@@ -44,32 +45,48 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             onPressed: () async {
               if (newCtrl.text != confirmCtrl.text) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Las contraseñas no coinciden'),
-                    backgroundColor: Colors.red,
-                  ),
+                  const SnackBar(content: Text('Las contraseñas no coinciden'), backgroundColor: Colors.red),
                 );
                 return;
               }
               if (newCtrl.text.length < 6) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('La contraseña debe tener al menos 6 caracteres'),
-                    backgroundColor: Colors.red,
-                  ),
+                  const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres'), backgroundColor: Colors.red),
                 );
                 return;
               }
-              Navigator.pop(ctx);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Contraseña actualizada correctamente'),
-                    backgroundColor: const Color(0xFF10B981),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null || user.email == null) return;
+
+              try {
+                final credential = EmailAuthProvider.credential(
+                  email: user.email!,
+                  password: currentCtrl.text,
                 );
+                await user.reauthenticateWithCredential(credential);
+                await user.updatePassword(newCtrl.text);
+
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Contraseña actualizada correctamente'),
+                      backgroundColor: const Color(0xFF10B981),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
+              } on FirebaseAuthException catch (e) {
+                final msg = e.code == 'wrong-password' || e.code == 'invalid-credential'
+                    ? 'La contraseña actual es incorrecta.'
+                    : 'Error al actualizar: ${e.message}';
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(msg), backgroundColor: Colors.red),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -84,7 +101,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     );
   }
 
-  Widget _buildPasswordField(TextEditingController ctrl, String label) {
+  Widget _buildPasswordField(BuildContext context, TextEditingController ctrl, String label) {
     return TextField(
       controller: ctrl,
       obscureText: true,
@@ -93,13 +110,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         prefixIcon: const Icon(Icons.lock_outline),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
       ),
     );
   }
 
   Future<void> _deleteAccount() async {
-    final confirm = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -109,7 +126,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             const SizedBox(width: 8),
             Text(
               '¿Eliminar cuenta?',
-              style: AppTypography.titleMedium.copyWith(
+              style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.error,
               ),
@@ -118,7 +135,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         ),
         content: Text(
           'Esta acción es permanente e irreversible. Todos tus datos serán eliminados y no podrás recuperarlos.',
-          style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -132,46 +149,108 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Sí, eliminar'),
+            child: const Text('Continuar'),
           ),
         ],
       ),
     );
 
-    if (confirm == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Solicitud de eliminación enviada'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    if (confirmed != true || !mounted) return;
+
+    final passwordCtrl = TextEditingController();
+    final authenticated = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Confirmar identidad',
+          style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-      );
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Por seguridad, ingresa tu contraseña para confirmar la eliminación.',
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            _buildPasswordField(ctx, passwordCtrl, 'Contraseña'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Eliminar cuenta'),
+          ),
+        ],
+      ),
+    );
+
+    if (authenticated != true || !mounted) return;
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      if (user.email != null) {
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: passwordCtrl.text,
+        );
+        await user.reauthenticateWithCredential(credential);
+      }
+
+      await user.delete();
+
+      if (mounted) {
+        await ref.read(authNotifierProvider.notifier).signOut();
+      }
+    } on FirebaseAuthException catch (e) {
+      final msg = e.code == 'wrong-password' || e.code == 'invalid-credential'
+          ? 'Contraseña incorrecta. No se eliminó la cuenta.'
+          : 'Error al eliminar: ${e.message}';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Seguridad',
-          style: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          // ── Seguridad y Privacidad ────────────────────────────────────
           _buildSecurityGroup(
+            context,
             'Seguridad y Privacidad',
             [
               _buildSecurityItem(
@@ -191,13 +270,14 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                 isLast: true,
               ),
             ],
+            isDark: isDark,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSecurityGroup(String title, List<Widget> items) {
+  Widget _buildSecurityGroup(BuildContext context, String title, List<Widget> items, {required bool isDark}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,7 +285,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           padding: const EdgeInsets.only(left: 8, bottom: 8),
           child: Text(
             title,
-            style: AppTypography.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
               letterSpacing: 1.1,
@@ -214,16 +294,20 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: isDark
+                ? Border.all(color: AppColors.borderDark)
+                : Border.all(color: const Color(0xFFF1F5F9)),
+            boxShadow: isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(children: items),
         ),
@@ -247,25 +331,25 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (color ?? AppColors.primary).withOpacity(0.1),
+              color: (color ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color ?? AppColors.primary, size: 20),
           ),
           title: Text(
             title,
-            style: AppTypography.bodyLarge.copyWith(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          subtitle: Text(subtitle, style: AppTypography.bodySmall),
+          subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
           trailing: trailing ??
               Icon(Icons.chevron_right_rounded, color: color ?? AppColors.textSecondary),
           onTap: trailing == null ? onTap : null,
         ),
         if (!isLast)
-          const Divider(height: 1, indent: 70, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, indent: 70, color: Theme.of(context).dividerColor),
       ],
     );
   }

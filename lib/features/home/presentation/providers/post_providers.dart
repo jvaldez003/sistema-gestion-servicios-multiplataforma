@@ -15,7 +15,7 @@ final globalFeedProvider = StreamProvider<List<BusinessPost>>((ref) {
 
     for (final map in maps) {
       final String? businessId = map['businessId'];
-      if (businessId == null) continue;
+      if (businessId == null || businessId.isEmpty) continue;
 
       // Find the business in the pre-fetched list
       final business = allBusinesses.firstWhere(

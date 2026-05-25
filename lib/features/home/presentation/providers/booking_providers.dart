@@ -47,3 +47,8 @@ final isProfessionalProvider = Provider<bool>((ref) {
   final businesses = ref.watch(professionalBusinessesProvider).valueOrNull ?? [];
   return businesses.isNotEmpty;
 });
+
+final memberScheduleProvider = StreamProvider.family<List<Appointment>, String>((ref, professionalId) {
+  final repository = ref.watch(bookingRepositoryProvider);
+  return repository.getProfessionalAppointments(professionalId);
+});

@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/custom_text_field.dart';
-import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/social_outline_button.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_input.dart';
 import '../providers/auth_notifier.dart';
 import 'register_step_one_screen.dart';
 import 'forgot_password_screen.dart';
@@ -58,8 +56,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (authState.status == AuthStatus.error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(authState.errorMessage ??
-                'Error al iniciar sesión con Google')),
+          content: Text(authState.errorMessage ?? 'Error al iniciar sesión con Google'),
+        ),
       );
     }
   }
@@ -68,91 +66,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.loading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top Purple Header Segment
-            Container(
-              width: double.infinity,
-              height: 280,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Decorative Circles (Optional: can be replaced with exact SVGs later)
-                  Positioned(
-                    top: -40,
-                    right: -40,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -20,
-                    left: -20,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  // Logo and Text
-                  Positioned(
-                    top: -20,
-                    right: -20,
-                    child: CircleAvatar(
-                      radius: 80,
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/logo.png',
-                            height: 120,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // ── Gradient header ───────────────────────────────────────
+            _Header(),
 
+            // ── Form section ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.lg,
+              ),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -160,24 +88,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Text(
                       'Bienvenido de nuevo',
-                      style: AppTypography.h2,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: 4),
                     Text(
                       'Ingresa tus credenciales para continuar',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondary,
+                          ),
                     ),
-                    const SizedBox(height: AppSpacing.xxl),
+                    const SizedBox(height: AppSpacing.xl),
 
-                    // Campo de Email
-                    CustomTextField(
-                      label: 'Correo Electrónico',
+                    AppInput(
+                      label: 'Correo electrónico',
                       hint: 'ejemplo@correo.com',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       controller: _emailController,
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingresa tu correo';
@@ -189,15 +121,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.md),
 
-                    // Campo de Contraseña
-                    CustomTextField(
+                    AppInput(
                       label: 'Contraseña',
                       hint: '••••••••',
                       prefixIcon: Icons.lock_outline,
-                      isPassword: true,
+                      obscureText: true,
                       controller: _passwordController,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingresa tu contraseña';
@@ -209,67 +142,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                     ),
 
-                    const SizedBox(height: AppSpacing.sm),
-
-                    // Error Message in UI
+                    // Error inline
                     if (authState.status == AuthStatus.error)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
                         child: Text(
                           authState.errorMessage ?? 'Ocurrió un error',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
 
-                    // Olvidé mi contraseña
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        ),
                         child: Text(
                           '¿Olvidaste tu contraseña?',
-                          style: AppTypography.bodySmall.copyWith(
+                          style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.sm),
 
-                    // Botón de Inicio de Sesión
-                    PrimaryButton(
-                      text: 'Iniciar Sesión',
+                    AppButton(
+                      label: 'Iniciar sesión',
                       isLoading: isLoading,
-                      onPressed: _handleLogin,
+                      onPressed: isLoading ? null : _handleLogin,
                     ),
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // O iniciar con
+                    // ── Divider ───────────────────────────────────────
                     Row(
                       children: [
                         const Expanded(child: Divider()),
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                           child: Text(
                             'O continúa con',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondary,
+                                ),
                           ),
                         ),
                         const Expanded(child: Divider()),
@@ -278,40 +206,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // Botón de Google
-                    SocialOutlineButton(
-                      text: 'Continuar con Google',
-                      icon: FontAwesomeIcons.google,
-                      onPressed: isLoading ? null : _handleGoogleSignIn,
+                    // ── Google button ─────────────────────────────────
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: isLoading ? null : _handleGoogleSignIn,
+                        icon: FaIcon(FontAwesomeIcons.google, size: 18),
+                        label: const Text('Continuar con Google'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: isDark
+                              ? AppColors.textOnDark
+                              : AppColors.textPrimary,
+                          side: BorderSide(
+                            color: isDark ? AppColors.borderDark : AppColors.border,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // Registro
+                    // ── Register link ─────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           '¿No tienes una cuenta? ',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondary,
+                              ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RegisterStepOneScreen(),
-                              ),
-                            );
-                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterStepOneScreen(),
+                            ),
+                          ),
                           child: Text(
                             'Regístrate aquí',
-                            style: AppTypography.bodyMedium.copyWith(
+                            style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -330,3 +278,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
+// ── Gradient header with logo ─────────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final statusBarH = MediaQuery.of(context).padding.top;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(top: statusBarH + 24, bottom: 36),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Decorative circles
+          Positioned(
+            top: -10,
+            right: -30,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -20,
+            left: -20,
+            child: Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          // Logo card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Image.asset(
+              'assets/logo.png',
+              height: 100,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

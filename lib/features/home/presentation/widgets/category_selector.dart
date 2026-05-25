@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../providers/business_providers.dart';
 
 class CategoryItem {
   final String label;
@@ -15,14 +17,14 @@ class CategoryItem {
   });
 }
 
-class CategorySelector extends StatefulWidget {
+class CategorySelector extends ConsumerStatefulWidget {
   const CategorySelector({super.key});
 
   @override
-  State<CategorySelector> createState() => _CategorySelectorState();
+  ConsumerState<CategorySelector> createState() => _CategorySelectorState();
 }
 
-class _CategorySelectorState extends State<CategorySelector> {
+class _CategorySelectorState extends ConsumerState<CategorySelector> {
   int selectedIndex = 0;
 
   final List<CategoryItem> _categories = [
@@ -68,7 +70,12 @@ class _CategorySelectorState extends State<CategorySelector> {
           final category = _categories[index];
 
           return GestureDetector(
-            onTap: () => setState(() => selectedIndex = index),
+            onTap: () {
+              setState(() => selectedIndex = index);
+              // index 0 = "Para ti" means no filter
+              final category = index == 0 ? null : _categories[index].label;
+              ref.read(categoryFilterProvider.notifier).state = category;
+            },
             child: Column(
               children: [
                 AnimatedContainer(
@@ -82,20 +89,20 @@ class _CategorySelectorState extends State<CategorySelector> {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: category.color.withOpacity(0.4),
+                              color: category.color.withValues(alpha:0.4),
                               blurRadius: 15,
                               offset: const Offset(0, 8),
                             )
                           ]
                         : [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
+                              color: Colors.black.withValues(alpha:0.03),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
                           ],
                     border: Border.all(
-                      color: isSelected ? category.color : Colors.black.withOpacity(0.05),
+                      color: isSelected ? category.color : Colors.black.withValues(alpha:0.05),
                       width: 1.5,
                     ),
                   ),

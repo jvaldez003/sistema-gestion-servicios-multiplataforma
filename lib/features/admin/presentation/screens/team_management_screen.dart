@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_colors.dart';
-import 'package:sistema_gestion_servicios_multiplataforma/core/theme/app_typography.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/admin/presentation/widgets/add_member_flow.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_details_providers.dart';
 import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/business_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/home/presentation/providers/booking_providers.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/auth/domain/entities/app_user.dart';
+import 'package:sistema_gestion_servicios_multiplataforma/features/auth/presentation/providers/auth_providers.dart';
 
 class TeamManagementScreen extends ConsumerStatefulWidget {
   final String businessId;
@@ -66,7 +70,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha:0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.arrow_back,
@@ -75,7 +79,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           ),
                           const SizedBox(width: 12),
                           Text('Gestión del Equipo',
-                              style: AppTypography.h3.copyWith(color: Colors.white)),
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white)),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -112,7 +116,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha:0.05),
                               blurRadius: 4)
                         ],
                       ),
@@ -174,62 +178,84 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.group_add, color: Colors.black54),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('Invita a tu equipo',
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.group_add, color: Colors.black54),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text('Invita a tu equipo',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('Comparte el link o agrega manualmente',
+                                    style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton(
+                            onPressed: () {
+                              Share.share(
+                                'Te invito a unirte a mi equipo en FlowServ. Descarga la app y solicita unirte al negocio: https://flowserv.app',
+                                subject: 'Únete a mi equipo en FlowServ',
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            child: const Text('Invitar',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text('Comparte el link o agrega manualmente',
+                                    fontSize: 11,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 6),
+                          OutlinedButton(
+                            onPressed: () => _showAddMember(),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            child: const Text('+ Agregar',
                                 style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11)),
-                          ],
-                        ),
+                                    fontSize: 11,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                      const Divider(height: 16),
+                      TextButton.icon(
+                        onPressed: () => _showUserSearch(context),
+                        icon: const Icon(Icons.person_search, size: 16),
+                        label: const Text('Buscar usuario registrado en la app'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                         ),
-                        child: const Text('Invitar',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(width: 6),
-                      OutlinedButton(
-                        onPressed: () => _showAddMember(),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                        ),
-                        child: const Text('+ Agregar',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -337,6 +363,102 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
     );
   }
 
+  void _showUserSearch(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _UserSearchSheet(businessId: widget.businessId),
+    );
+  }
+
+  void _showMemberSchedule(BuildContext context, Map<String, dynamic> member) {
+    final professionalId = member['id'] as String? ?? '';
+    final name = member['name'] ?? 'Miembro';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Consumer(
+        builder: (ctx, ref, _) {
+          final apptAsync = ref.watch(memberScheduleProvider(professionalId));
+          return DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            maxChildSize: 0.9,
+            minChildSize: 0.4,
+            expand: false,
+            builder: (_, scrollCtrl) => Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text('Agenda de $name', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: apptAsync.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error: $e')),
+                    data: (appointments) {
+                      final upcoming = appointments
+                          .where((a) => a.status != 'cancelled' && a.dateTime.isAfter(DateTime.now().subtract(const Duration(hours: 1))))
+                          .toList()
+                        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+                      if (upcoming.isEmpty) {
+                        return const Center(child: Text('Sin citas próximas', style: TextStyle(color: AppColors.textSecondary)));
+                      }
+                      return ListView.separated(
+                        controller: scrollCtrl,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: upcoming.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (ctx, i) {
+                          final a = upcoming[i];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.1), borderRadius: BorderRadius.circular(12)),
+                              child: Text(
+                                DateFormat('HH:mm').format(a.dateTime),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                              ),
+                            ),
+                            title: Text(a.serviceNames.join(', '), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            subtitle: Text(DateFormat('d MMM yyyy', 'es').format(a.dateTime)),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: a.status == 'confirmed' ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                a.status == 'confirmed' ? 'Confirmada' : 'Pendiente',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: a.status == 'confirmed' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showAddMember() {
     showModalBottomSheet(
       context: context,
@@ -402,7 +524,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha:0.2),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Stack(
@@ -418,7 +540,7 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
                           fontSize: 20)),
                   Text(label,
                       style: TextStyle(
-                          color: textColor.withOpacity(0.8), fontSize: 11)),
+                          color: textColor.withValues(alpha:0.8), fontSize: 11)),
                 ],
               ),
             ),
@@ -518,8 +640,6 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
           // Stats row
           Row(
             children: [
-              _buildMemberStat('0', 'Citas hoy'),
-              _buildMemberStat('0%', 'Completadas'),
               _buildMemberStat('${commission.toInt()}%', 'Comisión'),
             ],
           ),
@@ -530,26 +650,10 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _showMemberSchedule(context, member),
                   icon: const Icon(Icons.calendar_today, size: 14),
                   label:
                       const Text('Ver agenda', style: TextStyle(fontSize: 11)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.bar_chart, size: 14),
-                  label: const Text('Estadísticas',
-                      style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -748,6 +852,188 @@ class _TeamManagementScreenState extends ConsumerState<TeamManagementScreen>
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserSearchSheet extends ConsumerStatefulWidget {
+  final String businessId;
+  const _UserSearchSheet({required this.businessId});
+
+  @override
+  ConsumerState<_UserSearchSheet> createState() => _UserSearchSheetState();
+}
+
+class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
+  final _controller = TextEditingController();
+  List<AppUser> _results = [];
+  bool _isLoading = false;
+  String _lastQuery = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    final trimmed = query.trim();
+    if (trimmed == _lastQuery) return;
+    _lastQuery = trimmed;
+    if (trimmed.isEmpty) {
+      setState(() { _results = []; _isLoading = false; });
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final results = await ref.read(userRepositoryProvider).searchUsers(trimmed);
+      if (mounted && trimmed == _lastQuery) {
+        setState(() { _results = results; _isLoading = false; });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _addMember(AppUser user) async {
+    try {
+      await ref.read(teamRepositoryProvider).setTeamMember(
+        widget.businessId,
+        user.id,
+        {
+          'userId': user.id,
+          'name': user.name ?? user.email,
+          'email': user.email,
+          'photoUrl': user.photoUrl ?? '',
+          'role': 'Professional',
+          'commission': 50,
+          'status': 'active',
+          'joinedAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.name ?? user.email} agregado al equipo'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text('Buscar usuario', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              onChanged: _search,
+              decoration: InputDecoration(
+                hintText: 'Nombre o correo electrónico',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFF97316)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            )
+          else if (_results.isEmpty && _lastQuery.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: Text('No se encontraron usuarios', style: TextStyle(color: AppColors.textSecondary)),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _results.length,
+                itemBuilder: (_, i) {
+                  final user = _results[i];
+                  final name = user.name ?? user.email;
+                  final initials = name.isNotEmpty
+                      ? name.split(' ').take(2).map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join()
+                      : '?';
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty)
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
+                      child: (user.photoUrl == null || user.photoUrl!.isEmpty)
+                          ? Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))
+                          : null,
+                    ),
+                    title: Text(user.name ?? 'Sin nombre', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(user.email, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    trailing: ElevatedButton(
+                      onPressed: () => _addMember(user),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF97316),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        elevation: 0,
+                      ),
+                      child: const Text('Agregar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 24),
         ],
       ),
     );

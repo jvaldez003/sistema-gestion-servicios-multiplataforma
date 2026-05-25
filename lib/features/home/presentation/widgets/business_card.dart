@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/business.dart';
 
 class BusinessCard extends StatelessWidget {
@@ -13,25 +12,29 @@ class BusinessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () => context.push('/business/${business.id}', extra: business),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.xl),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          border: isDark ? Border.all(color: AppColors.borderDark) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Avatar, Name, Badges
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
@@ -41,11 +44,11 @@ class BusinessCard extends StatelessWidget {
                     backgroundImage: business.avatarUrl.isNotEmpty
                         ? CachedNetworkImageProvider(business.avatarUrl)
                         : null,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     child: business.avatarUrl.isEmpty
                         ? Text(
                             business.name.substring(0, 1).toUpperCase(),
-                            style: AppTypography.titleMedium.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -62,7 +65,7 @@ class BusinessCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 business.name,
-                                style: AppTypography.titleMedium.copyWith(
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -70,26 +73,23 @@ class BusinessCard extends StatelessWidget {
                             ),
                             if (business.isVerified) ...[
                               const SizedBox(width: 4),
-                              const Icon(Icons.verified,
-                                  color: AppColors.primary, size: 16),
+                              const Icon(Icons.verified, color: AppColors.primary, size: 16),
                             ],
                             if (business.isTop) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFF7ED),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.trending_up,
-                                        color: Color(0xFFF97316), size: 12),
+                                    const Icon(Icons.trending_up, color: Color(0xFFF97316), size: 12),
                                     const SizedBox(width: 4),
                                     Text(
                                       'TOP',
-                                      style: AppTypography.bodySmall.copyWith(
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: const Color(0xFFF97316),
                                         fontWeight: FontWeight.bold,
                                         fontSize: 10,
@@ -104,14 +104,13 @@ class BusinessCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '${business.category}  •  ${business.distance} km',
-                          style: AppTypography.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFFD1FAE5),
                       borderRadius: BorderRadius.circular(12),
@@ -129,7 +128,7 @@ class BusinessCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           'Abierto',
-                          style: AppTypography.bodySmall.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: const Color(0xFF065F46),
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
@@ -142,7 +141,6 @@ class BusinessCard extends StatelessWidget {
               ),
             ),
 
-            // Main Image with Overlays (only if gallery images exist)
             if (business.galleryImages.isNotEmpty)
               Stack(
                 children: [
@@ -177,13 +175,11 @@ class BusinessCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: const Center(
-                          child: Icon(Icons.image_not_supported_outlined,
-                              size: 40, color: AppColors.textSecondary),
+                          child: Icon(Icons.image_not_supported_outlined, size: 40, color: AppColors.textSecondary),
                         ),
                       ),
                     ),
                   ),
-                  // Gradient Overlay
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
@@ -193,13 +189,12 @@ class BusinessCard extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withValues(alpha: 0.6),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  // Price and Rating
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -213,14 +208,14 @@ class BusinessCard extends StatelessWidget {
                             children: [
                               Text(
                                 'Desde',
-                                style: AppTypography.bodySmall.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.white,
                                   fontSize: 11,
                                 ),
                               ),
                               Text(
                                 '\$${business.startingPrice.toStringAsFixed(0)}',
-                                style: AppTypography.h3.copyWith(
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -229,20 +224,18 @@ class BusinessCard extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 14),
+                              const Icon(Icons.star, color: Colors.amber, size: 14),
                               const SizedBox(width: 4),
                               Text(
                                 '${business.rating}',
-                                style: AppTypography.bodySmall.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -250,7 +243,7 @@ class BusinessCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Text(
                                 '(${business.totalReviews})',
-                                style: AppTypography.bodySmall.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Colors.white70,
                                   fontSize: 10,
                                 ),
@@ -261,7 +254,6 @@ class BusinessCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Carousel Indicator
                   if (business.galleryImages.length > 1)
                     Positioned(
                       bottom: 40,
@@ -270,41 +262,36 @@ class BusinessCard extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                            business.galleryImages.length.clamp(0, 5),
-                            (index) => Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 2),
-                                  width: index == 0 ? 16 : 6,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: index == 0
-                                        ? Colors.white
-                                        : Colors.white.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                )),
+                          business.galleryImages.length.clamp(0, 5),
+                          (index) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: index == 0 ? 16 : 6,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: index == 0 ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  // Image Counter Tag
                   if (business.galleryImages.length > 1)
                     Positioned(
                       top: 12,
                       right: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.image_outlined,
-                                color: Colors.white, size: 12),
+                            const Icon(Icons.image_outlined, color: Colors.white, size: 12),
                             const SizedBox(width: 4),
                             Text(
                               '1/${business.galleryImages.length}',
-                              style: AppTypography.bodySmall.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.white,
                                 fontSize: 10,
                               ),
@@ -316,7 +303,6 @@ class BusinessCard extends StatelessWidget {
                 ],
               ),
 
-            // Description and Tags
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -324,7 +310,7 @@ class BusinessCard extends StatelessWidget {
                 children: [
                   Text(
                     '✂️ ${business.description}',
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textPrimary,
                       height: 1.4,
                     ),
@@ -335,15 +321,14 @@ class BusinessCard extends StatelessWidget {
                     runSpacing: 8,
                     children: business.tags
                         .map((tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.08),
+                                color: AppColors.primary.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 tag,
-                                style: AppTypography.bodySmall.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -357,41 +342,33 @@ class BusinessCard extends StatelessWidget {
 
             const Divider(height: 1),
 
-            // Footer Metrics
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
               child: Row(
                 children: [
-                  _buildMetric(Icons.favorite_border,
+                  _buildMetric(context, Icons.favorite_border,
                       '${business.likes >= 1000 ? '${(business.likes / 1000).toStringAsFixed(1)}k' : business.likes}'),
                   const SizedBox(width: 16),
-                  _buildMetric(
-                      Icons.chat_bubble_outline, '${business.comments}'),
+                  _buildMetric(context, Icons.chat_bubble_outline, '${business.comments}'),
                   const SizedBox(width: 16),
-                  _buildMetric(Icons.share_outlined, ''),
+                  _buildMetric(context, Icons.share_outlined, ''),
                   const Spacer(),
-                  _buildMetric(Icons.bookmark_border_outlined, ''),
+                  _buildMetric(context, Icons.bookmark_border_outlined, ''),
                   const SizedBox(width: 16),
-                  _buildMetric(Icons.group_outlined,
-                      '${business.professionalCount} prof.'),
+                  _buildMetric(context, Icons.group_outlined, '${business.professionalCount} prof.'),
                 ],
               ),
             ),
 
-            // Action Button
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
               child: ElevatedButton(
                 onPressed: () => context.push('/business/${business.id}/booking', extra: business),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
                 child: Row(
@@ -401,8 +378,7 @@ class BusinessCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Text(
                       'Reservar cita',
-                      style: AppTypography.titleMedium
-                          .copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                     ),
                     const SizedBox(width: 10),
                     const Icon(Icons.chevron_right_rounded),
@@ -416,19 +392,15 @@ class BusinessCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetric(IconData icon, String label) {
+  Widget _buildMetric(BuildContext context, IconData icon, String label) {
     return Row(
       children: [
         Icon(icon, size: 20, color: AppColors.textSecondary),
         if (label.isNotEmpty) ...[
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: AppTypography.bodySmall.copyWith(fontSize: 13),
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13)),
         ],
       ],
     );
   }
 }
-

@@ -24,7 +24,7 @@ class PromotionalBanner extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.7),
+              AppColors.primary.withValues(alpha:0.7),
               const Color(0xFFFF8A65),
             ],
             begin: Alignment.topLeft,
@@ -33,7 +33,7 @@ class PromotionalBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha:0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -50,7 +50,7 @@ class PromotionalBanner extends StatelessWidget {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha:0.1),
                 ),
               ),
             ),
@@ -62,7 +62,7 @@ class PromotionalBanner extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha:0.05),
                 ),
               ),
             ),
@@ -71,11 +71,11 @@ class PromotionalBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha:0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       )
@@ -95,7 +95,7 @@ class PromotionalBanner extends StatelessWidget {
                       Text(
                         '¿Eres emprendedor?',
                         style: AppTypography.bodySmall.copyWith(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha:0.9),
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -113,7 +113,7 @@ class PromotionalBanner extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha:0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\\\\lib\\\\features\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(flutter analyze *)",
+      "PowerShell(flutter analyze *)",
+      "PowerShell(& \"C:\\\\Futter\\\\flutter\\\\bin\\\\flutter.bat\" --version 2>&1 | Select-Object -First 3)",
+      "PowerShell(& \"C:\\\\flutter\\\\bin\\\\flutter.bat\" analyze --no-fatal-infos 2>&1 | Select-Object -First 80)",
+      "Bash(\"C:\\\\flutter_windows_3.41.6-stable\\\\flutter\\\\bin\\\\flutter.bat\" analyze *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\\\\lib\\\\features\" -Recurse -Filter \"*.dart\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs grep -l \"appointment\\\\|Appointment\")",
+      "Bash(\"C:\\\\flutter_windows_3.41.6-stable\\\\flutter\\\\bin\\\\flutter.bat\" pub *)",
+      "Bash(python3 *)",
+      "Bash(Select-String -Pattern \"endAt\" -Context 2,2)",
+      "PowerShell([System.IO.File]::ReadAllText\\(\"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\\\\lib\\\\features\\\\auth\\\\data\\\\repositories\\\\firebase_user_repository.dart\"\\) | Select-String -Pattern \"endAt\" -AllMatches | ForEach-Object { $_.Matches | ForEach-Object { \"Found: '$\\($_.Value\\)' at index $\\($_.Index\\)\" } }; $content = [System.IO.File]::ReadAllText\\(\"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\\\\lib\\\\features\\\\auth\\\\data\\\\repositories\\\\firebase_user_repository.dart\"\\); $idx = $content.IndexOf\\(\"endAt\"\\); $content.Substring\\($idx, 30\\) | ForEach-Object { [System.Text.Encoding]::UTF8.GetBytes\\($_\\) | ForEach-Object { \"{0:X2}\" -f $_ } })",
+      "Bash(findstr \"shimmer\\\\|lottie\\\\|fl_chart\\\\|blur\")",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Usuario\\\\Documents\" -ErrorAction SilentlyContinue | Select-Object -First 15; [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\) -split \";\" | Select-String \"flutter\")",
+      "PowerShell(cd \"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\"; & \"C:\\\\Futter\\\\bin\\\\flutter.bat\" analyze lib/ --no-fatal-infos 2>&1 | Where-Object { $_ -match \"^\\\\s+error\" } | Select-Object -First 15)",
+      "PowerShell(cd \"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\"; $output = & \"C:\\\\Futter\\\\bin\\\\flutter.bat\" analyze lib/ --no-fatal-infos 2>&1; $output | Where-Object { $_ -match \"error -\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\Usuario\\\\sistema-gestion-servicios-multiplataforma\"; $output = & \"C:\\\\Futter\\\\bin\\\\flutter.bat\" analyze lib/ --no-fatal-infos 2>&1 | Out-String; $lines = $output -split \"`n\"; $errors = $lines | Where-Object { $_ -match \"\\\\berror\\\\b\" -and $_ -notmatch \"withOpacity\" }; $errors | Select-Object -First 20)",
+      "PowerShell(& \"C:\\\\Futter\\\\flutter\\\\bin\\\\flutter.bat\" analyze --no-pub 2>&1 | Select-Object -First 100)"
+    ]
+  }
+}

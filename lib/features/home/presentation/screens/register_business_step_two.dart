@@ -59,7 +59,7 @@ class _RegisterBusinessStepTwoState
         title: Text(
           'Registra tu negocio',
           style:
-              AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+              Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -75,7 +75,7 @@ class _RegisterBusinessStepTwoState
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -87,12 +87,12 @@ class _RegisterBusinessStepTwoState
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Datos de contacto',
-                style: AppTypography.h3.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
                 '¿Cómo podemos contactarte?',
-                style: AppTypography.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),
               _buildField('Nombre del propietario *', 'Tu nombre completo',
@@ -111,7 +111,7 @@ class _RegisterBusinessStepTwoState
                 children: [
                   Text(
                     'Número de empleados (opcional)',
-                    style: AppTypography.titleMedium.copyWith(fontSize: 14),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Container(
@@ -154,7 +154,7 @@ class _RegisterBusinessStepTwoState
                 child: Text(
                   'Continuar',
                   style:
-                      AppTypography.titleMedium.copyWith(color: Colors.white),
+                      Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                 ),
               ),
             ],
@@ -195,7 +195,7 @@ class _RegisterBusinessStepTwoState
       children: [
         Text(
           label,
-          style: AppTypography.titleMedium.copyWith(fontSize: 14),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
         ),
         const SizedBox(height: AppSpacing.sm),
         TextField(
@@ -242,7 +242,7 @@ class _RegisterBusinessStepTwoState
         Text(
           'Paso $step de 3',
           style:
-              AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
