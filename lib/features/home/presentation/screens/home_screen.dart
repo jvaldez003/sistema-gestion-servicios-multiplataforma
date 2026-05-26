@@ -13,7 +13,6 @@ import '../providers/post_providers.dart';
 import '../providers/business_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/profile_tab.dart';
-import '../widgets/loyalty_tab.dart';
 import '../widgets/post_card.dart';
 import '../../../../core/widgets/app_cached_image.dart';
 import '../../domain/models/business.dart';
@@ -40,7 +39,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: const [
           ExplorarTab(),
           AppointmentsTab(),
-          LoyaltyTab(),
           ProfileTab(),
         ],
       ),
@@ -58,11 +56,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Mis Citas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_membership_outlined),
-            activeIcon: Icon(Icons.card_membership),
-            label: 'Puntos',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
